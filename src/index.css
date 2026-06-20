@@ -1,0 +1,286 @@
+@import "tailwindcss";
+
+/* ──────────────────────────────────────────────────────────────
+   Odara Design System — CSS custom properties
+   Source: ../Odara Design System/Tokens/
+   ────────────────────────────────────────────────────────────── */
+
+:root {
+  /* Cream / champagne surfaces */
+  --cream-50:  #FBF6EF;
+  --cream-100: #F7EDE1;
+  --cream-200: #F1E2D2;
+  --cream-300: #E9D5C1;
+  --cream-400: #DCC3AB;
+  --cream-500: #C9AC8E;
+
+  /* Gold (primary brand) */
+  --gold-100: #F2E2C2;
+  --gold-200: #E7CD9C;
+  --gold-300: #D6B473;
+  --gold-400: #C39A4E;
+  --gold-500: #AC7E38;
+  --gold-600: #8C6228;
+
+  /* Emerald (accent) */
+  --emerald-300: #2C8A66;
+  --emerald-400: #14704F;
+  --emerald-500: #0C543B;
+  --emerald-600: #073C2A;
+
+  /* Ink (warm brown text) */
+  --ink-900: #38291B;
+  --ink-700: #5A4634;
+  --ink-500: #897157;
+  --ink-300: #B6A189;
+  --ink-100: #E3D6C5;
+
+  --white: #FFFFFF;
+  --rose-300: #D98E86;
+  --rose-400: #C46A62;
+
+  /* Semantic surfaces */
+  --surface-page:    var(--cream-200);
+  --surface-card:    #FFFCF8;
+  --surface-raised:  var(--white);
+  --surface-sunken:  var(--cream-100);
+  --surface-inverse: var(--emerald-600);
+  --surface-gold:    var(--gold-400);
+
+  /* Semantic text */
+  --text-strong:  var(--ink-900);
+  --text-body:    var(--ink-700);
+  --text-muted:   var(--ink-500);
+  --text-faint:   var(--ink-300);
+  --text-on-gold: #43320F;
+  --text-on-dark: var(--cream-100);
+  --text-gold:    var(--gold-500);
+
+  /* Brand */
+  --brand-primary:      var(--gold-400);
+  --brand-primary-deep: var(--gold-500);
+  --brand-accent:       var(--emerald-500);
+
+  /* Borders */
+  --border-soft:   #EADBC8;
+  --border:        #E0CDB5;
+  --border-strong: var(--gold-300);
+
+  /* Commerce */
+  --price-sale:    var(--rose-400);
+  --badge-sale-bg: var(--rose-400);
+  --badge-new-bg:  var(--emerald-500);
+
+  /* Focus */
+  --focus-ring:  color-mix(in srgb, var(--gold-400) 55%, transparent);
+  --focus-width: 3px;
+
+  /* Gradients */
+  --gradient-gold: linear-gradient(135deg, var(--gold-300) 0%, var(--gold-500) 48%, var(--gold-300) 100%);
+  --gradient-page: linear-gradient(180deg, var(--cream-100) 0%, var(--cream-300) 100%);
+
+  /* Font families */
+  --font-cormorant: 'Cormorant Garamond', 'Hoefler Text', Georgia, serif;
+  --font-jost:      'Jost', 'Century Gothic', system-ui, sans-serif;
+  --font-script:    'Great Vibes', 'Segoe Script', cursive;
+  --font-serif:     var(--font-cormorant);
+  --font-sans:      var(--font-jost);
+
+  /* Type scale */
+  --text-2xs:       0.6875rem;
+  --text-xs:        0.75rem;
+  --text-sm:        0.875rem;
+  --text-md:        1rem;
+  --text-lg:        1.125rem;
+  --text-xl:        1.375rem;
+  --text-2xl:       1.75rem;
+  --text-3xl:       2.25rem;
+  --text-4xl:       3rem;
+  --text-5xl:       4rem;
+  --text-script-lg: 5.5rem;
+
+  /* Type weights */
+  --weight-light:    300;
+  --weight-regular:  400;
+  --weight-medium:   500;
+  --weight-semibold: 600;
+
+  /* Line heights */
+  --leading-tight: 1.12;
+  --leading-snug:  1.3;
+  --leading-body:  1.6;
+
+  /* Letter spacing */
+  --tracking-eyebrow: 0.28em;
+  --tracking-caps:    0.16em;
+  --tracking-wide:    0.06em;
+
+  /* Spacing (4px rhythm) */
+  --space-0: 0;
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.5rem;
+  --space-6: 2rem;
+  --space-7: 3rem;
+  --space-8: 4rem;
+  --space-9: 6rem;
+
+  /* Border radii */
+  --radius-xs:     4px;
+  --radius-sm:     8px;
+  --radius-md:     12px;
+  --radius-lg:     18px;
+  --radius-xl:     26px;
+  --radius-pill:   999px;
+  --radius-circle: 50%;
+
+  /* Layout */
+  --container-max:    1200px;
+  --container-narrow: 760px;
+  --header-h:         76px;
+  --cart-w:           384px;
+
+  /* Control heights */
+  --control-h-sm: 36px;
+  --control-h-md: 44px;
+  --control-h-lg: 54px;
+
+  /* Shadows (warm brown-tinted) */
+  --shadow-xs:    0 1px 2px rgba(86, 60, 32, 0.08);
+  --shadow-sm:    0 2px 8px rgba(86, 60, 32, 0.10);
+  --shadow-md:    0 8px 24px rgba(86, 60, 32, 0.12);
+  --shadow-lg:    0 18px 48px rgba(72, 50, 26, 0.16);
+  --shadow-gold:  0 10px 28px rgba(172, 126, 56, 0.28);
+  --shadow-inset: inset 0 1px 0 rgba(255, 255, 255, 0.6);
+  --ring-gold:    0 0 0 1px rgba(195, 154, 78, 0.35);
+
+  /* Motion */
+  --ease-out:    cubic-bezier(0.22, 0.61, 0.36, 1);
+  --ease-in-out: cubic-bezier(0.65, 0.05, 0.36, 1);
+  --dur-fast:    140ms;
+  --dur-med:     240ms;
+  --dur-slow:    420ms;
+}
+
+/* ──────────────────────────────────────────────────────────────
+   Tailwind v4 theme — maps DS tokens to utility classes
+   ────────────────────────────────────────────────────────────── */
+
+@theme inline {
+  /* Fonts */
+  --font-sans:   var(--font-sans);
+  --font-serif:  var(--font-serif);
+  --font-script: var(--font-script);
+
+  /* Palette colors */
+  --color-cream-50:  var(--cream-50);
+  --color-cream-100: var(--cream-100);
+  --color-cream-200: var(--cream-200);
+  --color-cream-300: var(--cream-300);
+  --color-cream-400: var(--cream-400);
+  --color-cream-500: var(--cream-500);
+
+  --color-gold-100: var(--gold-100);
+  --color-gold-200: var(--gold-200);
+  --color-gold-300: var(--gold-300);
+  --color-gold-400: var(--gold-400);
+  --color-gold-500: var(--gold-500);
+  --color-gold-600: var(--gold-600);
+
+  --color-emerald-300: var(--emerald-300);
+  --color-emerald-400: var(--emerald-400);
+  --color-emerald-500: var(--emerald-500);
+  --color-emerald-600: var(--emerald-600);
+
+  --color-ink-900: var(--ink-900);
+  --color-ink-700: var(--ink-700);
+  --color-ink-500: var(--ink-500);
+  --color-ink-300: var(--ink-300);
+  --color-ink-100: var(--ink-100);
+
+  --color-rose-300: var(--rose-300);
+  --color-rose-400: var(--rose-400);
+
+  /* Semantic text colors */
+  --color-on-gold: var(--text-on-gold);
+
+  /* Semantic surface colors */
+  --color-surface-page:    var(--surface-page);
+  --color-surface-card:    var(--surface-card);
+  --color-surface-raised:  var(--surface-raised);
+  --color-surface-sunken:  var(--surface-sunken);
+  --color-surface-inverse: var(--surface-inverse);
+  --color-surface-gold:    var(--surface-gold);
+
+  /* Border colors */
+  --color-border-soft:   var(--border-soft);
+  --color-border-std:    var(--border);
+  --color-border-strong: var(--border-strong);
+
+  /* Shadows */
+  --shadow-xs:   var(--shadow-xs);
+  --shadow-sm:   var(--shadow-sm);
+  --shadow-md:   var(--shadow-md);
+  --shadow-lg:   var(--shadow-lg);
+  --shadow-gold: var(--shadow-gold);
+
+  /* Border radii */
+  --radius-xs:     var(--radius-xs);
+  --radius-sm:     var(--radius-sm);
+  --radius-md:     var(--radius-md);
+  --radius-lg:     var(--radius-lg);
+  --radius-xl:     var(--radius-xl);
+  --radius-pill:   var(--radius-pill);
+  --radius-circle: var(--radius-circle);
+
+  /* Type scale */
+  --text-2xs:       var(--text-2xs);
+  --text-xs:        var(--text-xs);
+  --text-sm:        var(--text-sm);
+  --text-md:        var(--text-md);
+  --text-lg:        var(--text-lg);
+  --text-xl:        var(--text-xl);
+  --text-2xl:       var(--text-2xl);
+  --text-3xl:       var(--text-3xl);
+  --text-4xl:       var(--text-4xl);
+  --text-5xl:       var(--text-5xl);
+  --text-script-lg: var(--text-script-lg);
+}
+
+/* ──────────────────────────────────────────────────────────────
+   Base styles
+   ────────────────────────────────────────────────────────────── */
+
+*, *::before, *::after { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-family: var(--font-sans);
+  font-size: var(--text-md);
+  line-height: var(--leading-body);
+  color: var(--text-body);
+  background: var(--surface-page);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+h1, h2, h3, h4 {
+  font-family: var(--font-serif);
+  color: var(--text-strong);
+  font-weight: var(--weight-semibold);
+  line-height: var(--leading-tight);
+  margin: 0;
+}
+
+p { margin: 0; text-wrap: pretty; }
+
+a { color: var(--text-gold); text-decoration: none; }
+
+::selection { background: var(--gold-200); color: var(--ink-900); }
+
+:focus-visible {
+  outline: var(--focus-width) solid var(--focus-ring);
+  outline-offset: 2px;
+}
