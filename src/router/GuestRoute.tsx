@@ -1,7 +1,7 @@
 import { Outlet, Navigate } from 'react-router-dom'
 import { useAuthStatus } from '../hooks/useAuthStatus'
 
-export function ProtectedRoute() {
+export function GuestRoute() {
   const status = useAuthStatus()
 
   if (status === 'loading') {
@@ -12,5 +12,5 @@ export function ProtectedRoute() {
     )
   }
 
-  return status === 'auth' ? <Outlet /> : <Navigate to="/login" replace />
+  return status === 'unauth' ? <Outlet /> : <Navigate to="/dashboard" replace />
 }

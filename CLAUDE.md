@@ -4,7 +4,7 @@ React 19 admin SPA for managing the Odara catalog (products, categories, feedbac
 
 ## Stack
 
-Vite · React 19 · TypeScript 5 (strict) · React Router v7 · TanStack Query · Tailwind CSS 4 · Supabase (auth + full CRUD)
+Vite · React 19 · TypeScript 5 (strict) · React Router v7 · TanStack Query · TanStack Form · Tailwind CSS 4 · Supabase (auth + full CRUD)
 
 ## Commands
 
