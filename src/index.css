@@ -284,3 +284,15 @@ a { color: var(--text-gold); text-decoration: none; }
   outline: var(--focus-width) solid var(--focus-ring);
   outline-offset: 2px;
 }
+
+/* Toast notification entrance */
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
