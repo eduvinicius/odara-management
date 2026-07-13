@@ -296,3 +296,33 @@ a { color: var(--text-gold); text-decoration: none; }
     transform: translateY(0);
   }
 }
+
+/* Confirm dialog entrance + backdrop */
+@keyframes dialog-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes dialog-backdrop-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+dialog.confirm-dialog {
+  animation: dialog-in var(--dur-med) var(--ease-out);
+}
+
+dialog.confirm-dialog::backdrop {
+  background: rgba(56, 41, 27, 0.45);
+  animation: dialog-backdrop-in var(--dur-med) var(--ease-out);
+}
