@@ -1,7 +1,7 @@
 import type { FormEvent } from 'react'
 import { Link } from 'react-router-dom'
 import { useForm } from '@tanstack/react-form'
-import { FolderPlus } from 'lucide-react'
+import { AlertTriangle, FolderPlus, RefreshCw } from 'lucide-react'
 import { CoverImageField } from '../../components/shared/CoverImageField'
 import { GalleryImageField } from '../../components/shared/GalleryImageField'
 import { SelectField } from '../../components/shared/SelectField'
@@ -81,6 +81,13 @@ export type ProductFormProps = {
  * non-interactive, and a message directs the admin to `/categories` to
  * create one first (note: that route does not exist in this app yet — see
  * this task's report).
+ *
+ * Also gates the form when the categories fetch itself fails
+ * (`categoriesQuery.isError`): this is a distinct situation from "no
+ * categories exist" — there is no way to validly assign a category if the
+ * list failed to load, so the form is disabled and a retry action
+ * (`categoriesQuery.refetch()`) is offered instead of the "create a
+ * category" call-to-action.
  */
 export function ProductForm({
   initialValues,
@@ -91,9 +98,13 @@ export function ProductForm({
   const categoriesQuery = useCategories()
 
   const categories = categoriesQuery.data ?? []
-  const hasNoCategories =
-    !categoriesQuery.isLoading && !categoriesQuery.isError && categories.length === 0
+  const categoriesFailed = categoriesQuery.isError
+  const hasNoCategories = !categoriesQuery.isLoading && !categoriesFailed && categories.length === 0
   const categoryOptions = buildCategoryOptions(categories)
+
+  function handleCategoriesRetry() {
+    categoriesQuery.refetch()
+  }
 
   const form = useForm({
     defaultValues: initialValues,
@@ -103,7 +114,7 @@ export function ProductForm({
   })
 
   const isBusy = form.state.isSubmitting || isSubmitting
-  const fieldsDisabled = hasNoCategories || isBusy
+  const fieldsDisabled = hasNoCategories || categoriesFailed || isBusy
 
   function handleFormSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -113,6 +124,33 @@ export function ProductForm({
 
   return (
     <form onSubmit={handleFormSubmit} className="flex max-w-2xl flex-col gap-6" noValidate>
+      {categoriesFailed && (
+        <div
+          className="flex flex-col items-start gap-3 rounded-md p-4 sm:flex-row sm:items-center"
+          style={{ background: 'var(--surface-card)', boxShadow: 'var(--shadow-xs)' }}
+        >
+          <AlertTriangle aria-hidden="true" className="h-6 w-6 shrink-0" style={{ color: 'var(--rose-400)' }} />
+          <p className="flex-1 text-sm" style={{ color: 'var(--ink-700)' }}>
+            Não foi possível carregar as categorias. Tente novamente.
+          </p>
+          <button
+            type="button"
+            onClick={handleCategoriesRetry}
+            className="inline-flex shrink-0 cursor-pointer items-center gap-2 rounded-pill px-5 text-sm font-medium"
+            style={{
+              height: 'var(--control-h-sm)',
+              border: '1px solid var(--border-soft)',
+              color: 'var(--ink-700)',
+              background: 'var(--surface-raised)',
+              transition: 'opacity var(--dur-fast) var(--ease-out)',
+            }}
+          >
+            <RefreshCw aria-hidden="true" className="h-4 w-4" />
+            Tentar novamente
+          </button>
+        </div>
+      )}
+
       {hasNoCategories && (
         <div
           className="flex flex-col items-start gap-3 rounded-md p-4 sm:flex-row sm:items-center"
@@ -174,7 +212,13 @@ export function ProductForm({
             onChange={field.handleChange}
             onBlur={field.handleBlur}
             options={categoryOptions}
-            placeholder={categoriesQuery.isLoading ? 'Carregando categorias…' : 'Selecione uma categoria'}
+            placeholder={
+              categoriesQuery.isLoading
+                ? 'Carregando categorias…'
+                : categoriesFailed
+                  ? 'Não foi possível carregar as categorias'
+                  : 'Selecione uma categoria'
+            }
             required
             disabled={fieldsDisabled || categoriesQuery.isLoading}
             error={field.state.meta.isTouched ? field.state.meta.errors[0] : undefined}

@@ -222,6 +222,7 @@ export function ProductListPage() {
     active,
   })
   const categoriesQuery = useCategories()
+  const categoriesFailed = categoriesQuery.isError
 
   const categoryLabelById = new Map<string, string>()
   for (const category of categoriesQuery.data ?? []) {
@@ -299,6 +300,10 @@ export function ProductListPage() {
     refetch()
   }
 
+  function handleCategoriesRetry() {
+    categoriesQuery.refetch()
+  }
+
   function handleDeleteRequest(product: Product) {
     setProductPendingDelete(product)
   }
@@ -349,6 +354,23 @@ export function ProductListPage() {
             onChange={handleCategoryChange}
             options={categoryOptions}
           />
+          {categoriesFailed && (
+            <div className="mt-1 flex items-center gap-2">
+              <AlertTriangle aria-hidden="true" className="h-3.5 w-3.5 shrink-0" style={{ color: 'var(--rose-400)' }} />
+              <p className="text-xs" style={{ color: 'var(--rose-400)' }} role="alert">
+                Não foi possível carregar as categorias.
+              </p>
+              <button
+                type="button"
+                onClick={handleCategoriesRetry}
+                className="inline-flex shrink-0 cursor-pointer items-center gap-1 text-xs font-medium underline"
+                style={{ color: 'var(--ink-700)' }}
+              >
+                <RefreshCw aria-hidden="true" className="h-3 w-3" />
+                Tentar novamente
+              </button>
+            </div>
+          )}
         </div>
 
         <div className="sm:min-w-[180px]">
