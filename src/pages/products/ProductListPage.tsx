@@ -21,6 +21,7 @@ import { PRODUCTS_PAGE_SIZE, useProducts } from '../../lib/queries/products'
 import type { Product } from '../../lib/queries/products'
 import { useCategories } from '../../lib/queries/categories'
 import { money } from '../../lib/utils'
+import { ProductStatusToggle } from './ProductStatusToggle'
 
 /** URL search param keys used to persist the list's search/filter/page state. */
 const SEARCH_PARAM = 'q'
@@ -78,26 +79,6 @@ function renderThumbnail(product: Product): ReactNode {
   )
 }
 
-function renderStatusBadge(
-  isOn: boolean,
-  onLabel: string,
-  offLabel: string,
-  onBackground: string,
-  onColor: string,
-): ReactNode {
-  return (
-    <span
-      className="inline-flex items-center rounded-pill px-3 py-1 text-xs font-medium tracking-wide uppercase"
-      style={{
-        background: isOn ? onBackground : 'var(--cream-100)',
-        color: isOn ? onColor : 'var(--ink-700)',
-      }}
-    >
-      {isOn ? onLabel : offLabel}
-    </span>
-  )
-}
-
 function renderEditAction(product: Product): ReactNode {
   return (
     <Link
@@ -141,14 +122,24 @@ function buildColumns(categoryLabelById: Map<string, string>): Array<DataTableCo
     {
       key: 'active',
       header: 'Status',
-      render: (product) =>
-        renderStatusBadge(product.active, 'Ativo', 'Inativo', 'var(--emerald-500)', 'var(--text-on-dark)'),
+      render: (product) => (
+        <ProductStatusToggle
+          product={product}
+          field="active"
+          label={`Status ativo de ${product.name}`}
+        />
+      ),
     },
     {
       key: 'featured',
       header: 'Destaque',
-      render: (product) =>
-        renderStatusBadge(product.featured, 'Destaque', 'Não destacado', 'var(--gradient-gold)', 'var(--text-on-gold)'),
+      render: (product) => (
+        <ProductStatusToggle
+          product={product}
+          field="featured"
+          label={`Destaque de ${product.name}`}
+        />
+      ),
     },
     {
       key: 'actions',
