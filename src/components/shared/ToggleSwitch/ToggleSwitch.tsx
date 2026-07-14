@@ -56,18 +56,23 @@ export function ToggleSwitch({
       >
         <span
           aria-hidden="true"
-          className="pointer-events-none absolute rounded-circle bg-white shadow-sm"
+          className="pointer-events-none absolute rounded-circle"
           style={{
             width: '18px',
             height: '18px',
             top: '3px',
             left: checked ? '23px' : '3px',
+            background: 'var(--white)',
+            boxShadow: 'var(--shadow-sm)',
             transition: `left var(--dur-fast) var(--ease-out)`,
           }}
         />
 
         {isPending && (
-          <span className="pointer-events-none absolute inset-0 flex items-center justify-center text-white">
+          <span
+            className="pointer-events-none absolute inset-0 flex items-center justify-center"
+            style={{ color: 'var(--white)' }}
+          >
             <Spinner className="h-3 w-3" />
           </span>
         )}
