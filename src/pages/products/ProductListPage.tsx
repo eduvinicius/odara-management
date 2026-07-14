@@ -5,7 +5,6 @@ import {
   FilterX,
   ImageOff,
   PackagePlus,
-  Pencil,
   Plus,
   RefreshCw,
   SearchX,
@@ -21,6 +20,8 @@ import { PRODUCTS_PAGE_SIZE, useProducts } from '../../lib/queries/products'
 import type { Product } from '../../lib/queries/products'
 import { useCategories } from '../../lib/queries/categories'
 import { money } from '../../lib/utils'
+import { ProductDeleteDialog } from './ProductDeleteDialog'
+import { ProductRowActions } from './ProductRowActions'
 import { ProductStatusToggle } from './ProductStatusToggle'
 
 /** URL search param keys used to persist the list's search/filter/page state. */
@@ -79,20 +80,10 @@ function renderThumbnail(product: Product): ReactNode {
   )
 }
 
-function renderEditAction(product: Product): ReactNode {
-  return (
-    <Link
-      to={`/products/${product.id}/edit`}
-      className="inline-flex items-center gap-1 text-sm font-medium"
-      style={{ color: 'var(--text-gold)' }}
-    >
-      <Pencil aria-hidden="true" className="h-4 w-4" />
-      Editar
-    </Link>
-  )
-}
-
-function buildColumns(categoryLabelById: Map<string, string>): Array<DataTableColumn<Product>> {
+function buildColumns(
+  categoryLabelById: Map<string, string>,
+  onDeleteRequest: (product: Product) => void,
+): Array<DataTableColumn<Product>> {
   return [
     {
       key: 'thumbnail',
@@ -144,7 +135,9 @@ function buildColumns(categoryLabelById: Map<string, string>): Array<DataTableCo
     {
       key: 'actions',
       header: 'Ações',
-      render: renderEditAction,
+      render: (product) => (
+        <ProductRowActions product={product} onDeleteRequest={onDeleteRequest} />
+      ),
     },
   ]
 }
@@ -216,6 +209,11 @@ export function ProductListPage() {
   }
 
   const debounceRef = useRef<number | undefined>(undefined)
+
+  // Tracks which product's delete confirmation is open, if any. Kept as a
+  // single nullable value (rather than a set of open ids) so only one delete
+  // confirmation can ever be open across the whole list at a time.
+  const [productPendingDelete, setProductPendingDelete] = useState<Product | null>(null)
 
   const { data, totalCount, isLoading, isError, refetch } = useProducts({
     page,
@@ -299,6 +297,14 @@ export function ProductListPage() {
 
   function handleRetry() {
     refetch()
+  }
+
+  function handleDeleteRequest(product: Product) {
+    setProductPendingDelete(product)
+  }
+
+  function handleCloseDeleteDialog() {
+    setProductPendingDelete(null)
   }
 
   const isTrueEmpty = !isLoading && !isError && data.length === 0 && !hasActiveFilters
@@ -431,7 +437,7 @@ export function ProductListPage() {
         {hasRows && (
           <>
             <DataTable
-              columns={buildColumns(categoryLabelById)}
+              columns={buildColumns(categoryLabelById, handleDeleteRequest)}
               rows={data}
               getRowId={(product) => product.id}
               caption="Lista de produtos"
@@ -448,6 +454,8 @@ export function ProductListPage() {
           </>
         )}
       </div>
+
+      <ProductDeleteDialog product={productPendingDelete} onClose={handleCloseDeleteDialog} />
     </div>
   )
 }
