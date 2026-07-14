@@ -283,3 +283,79 @@ export function useUpdateProduct(): UseMutationResult<Product, Error, UpdateProd
     },
   })
 }
+
+/**
+ * Input for `useDeleteProduct`. Carries the product's `id` plus its current
+ * `image_url`/`images`, so this mutation knows exactly which storage files
+ * to clean up without needing a separate fetch (the caller — the product
+ * list, which already has the full `Product` row loaded via `useProducts` —
+ * can pass it directly).
+ */
+export type DeleteProductInput = Pick<Product, 'id' | 'image_url' | 'images'>
+
+async function deleteProduct(input: DeleteProductInput): Promise<void> {
+  // Order of operations: the DB row is deleted FIRST, storage cleanup
+  // SECOND. This is the opposite order from `updateProduct` above, and is
+  // deliberate:
+  //
+  // - Spec's Must 55 ("must not leave orphaned image files") is the
+  //   strongest safety constraint on *delete* specifically, and Must 54
+  //   requires the row removal itself to be permanent. Deleting the row
+  //   first means: if the row delete fails, nothing has happened yet (safe,
+  //   retryable) — no files were touched. If the row delete succeeds but the
+  //   subsequent storage cleanup fails, the row is still gone (Must 54 is
+  //   satisfied) and the error surfaces to the caller so it can be retried
+  //   or surfaced to the admin; the only downside is temporarily orphaned
+  //   files in storage, which is a lesser failure than a dangling DB row
+  //   pointing at deleted files (broken images in a still-visible product).
+  // - Deleting storage first would risk the reverse: files gone, but the
+  //   product row still exists and still references them if the DB delete
+  //   then fails — a worse, more visible admin-facing failure (broken
+  //   images on a product that's supposedly still active).
+  const { error } = await supabase.from('Products').delete().eq('id', input.id)
+
+  if (error) {
+    throw new Error(error.message)
+  }
+
+  const imagesToDelete: string[] = []
+
+  if (input.image_url !== null) {
+    imagesToDelete.push(input.image_url)
+  }
+
+  if (input.images !== null) {
+    imagesToDelete.push(...input.images)
+  }
+
+  if (imagesToDelete.length > 0) {
+    await deleteProductImages(imagesToDelete)
+  }
+}
+
+/**
+ * Permanently deletes a product row from the `Products` table by `id`
+ * (Must 14), then removes its cover image (Must 15) and every gallery image
+ * (Must 16) from the "Products" storage bucket. See `deleteProduct` above
+ * for the DB-row-first ordering rationale.
+ *
+ * On success, invalidates both the `['products']` list cache and the
+ * specific `['products', id]` entry so the list stops showing the deleted
+ * product immediately.
+ *
+ * Consumed by the product list's delete action (Task 18), which shows a
+ * `<ConfirmDialog>` before calling this mutation and a toast on
+ * success/error — this hook only exposes pending/error state, it does not
+ * notify the admin itself.
+ */
+export function useDeleteProduct(): UseMutationResult<void, Error, DeleteProductInput> {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: deleteProduct,
+    onSuccess: (_data, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['products'] })
+      queryClient.invalidateQueries({ queryKey: ['products', variables.id] })
+    },
+  })
+}
