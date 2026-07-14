@@ -73,7 +73,7 @@ export function CoverImageField({
               disabled={disabled}
               aria-label="Cancelar nova imagem de capa selecionada"
               className="absolute -right-2 -top-2 inline-flex h-6 w-6 cursor-pointer items-center justify-center rounded-circle disabled:cursor-not-allowed"
-              style={{ background: 'var(--rose-400)', color: '#fff', boxShadow: 'var(--shadow-sm)' }}
+              style={{ background: 'var(--rose-400)', color: 'var(--white)', boxShadow: 'var(--shadow-sm)' }}
             >
               <X aria-hidden="true" className="h-3.5 w-3.5" />
             </button>

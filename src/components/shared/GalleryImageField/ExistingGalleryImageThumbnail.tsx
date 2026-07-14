@@ -41,7 +41,7 @@ export function ExistingGalleryImageThumbnail({
         <span
           aria-hidden="true"
           className="pointer-events-none absolute inset-x-1 bottom-1 rounded-pill px-2 py-0.5 text-center text-2xs font-medium"
-          style={{ background: 'var(--rose-400)', color: '#fff' }}
+          style={{ background: 'var(--rose-400)', color: 'var(--white)' }}
         >
           Removida
         </span>
@@ -59,7 +59,7 @@ export function ExistingGalleryImageThumbnail({
         className="absolute -right-2 -top-2 inline-flex h-6 w-6 cursor-pointer items-center justify-center rounded-circle disabled:cursor-not-allowed"
         style={{
           background: markedForRemoval ? 'var(--emerald-500)' : 'var(--rose-400)',
-          color: '#fff',
+          color: 'var(--white)',
           boxShadow: 'var(--shadow-sm)',
         }}
       >
