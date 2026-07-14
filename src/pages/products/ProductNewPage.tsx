@@ -2,6 +2,7 @@ import { useNavigate } from 'react-router-dom'
 import { useToast } from '../../components/shared/Toast'
 import { createEmptyProductFormValues } from '../../lib/forms/productForm'
 import type { ProductFormValues } from '../../lib/forms/productForm'
+import { toProductScalarFields } from '../../lib/forms/productMutationInput'
 import { useCreateProduct } from '../../lib/mutations/products'
 import type { CreateProductInput } from '../../lib/mutations/products'
 import { ProductForm } from './ProductForm'
@@ -11,22 +12,13 @@ const CREATE_ERROR_MESSAGE = 'Não foi possível criar o produto. Tente novament
 
 /**
  * Parses the form's string/UI-only shape into the mutation's typed input.
- * Mirrors `lib/forms/productForm.ts`'s emptiness conventions: numeric fields
- * treat `''` as unset, `badge_tone`/`badge_label` treat an empty string as
- * "no badge", and `description` treats an empty string as "no description" —
- * consistent with how those fields' validators already allow blank values.
+ * Scalar fields (name, price, badge, etc.) are parsed by the shared
+ * `toProductScalarFields` helper, also used by `ProductEditPage` (Task 23),
+ * so create and edit never drift apart on emptiness conventions.
  */
 function toCreateProductInput(values: ProductFormValues): CreateProductInput {
   return {
-    name: values.name,
-    category_id: values.category_id,
-    price: Number(values.price),
-    original_price: values.original_price === '' ? null : Number(values.original_price),
-    badge_tone: values.badge_tone === '' ? null : values.badge_tone,
-    badge_label: values.badge_label === '' ? null : values.badge_label,
-    featured: values.featured,
-    active: values.active,
-    description: values.description === '' ? null : values.description,
+    ...toProductScalarFields(values),
     coverImageFile: values.coverImageFile,
     galleryImageFiles: values.galleryImageFiles,
   }
