@@ -1,13 +1,59 @@
-import type { ReactNode } from 'react'
-import { Link } from 'react-router-dom'
-import { AlertTriangle, ImageOff, PackagePlus, Pencil, Plus, RefreshCw } from 'lucide-react'
+import { useRef, useState, type ReactNode } from 'react'
+import { Link, useSearchParams } from 'react-router-dom'
+import {
+  AlertTriangle,
+  FilterX,
+  ImageOff,
+  PackagePlus,
+  Pencil,
+  Plus,
+  RefreshCw,
+  SearchX,
+} from 'lucide-react'
 import { DataTable } from '../../components/shared/DataTable'
 import type { DataTableColumn } from '../../components/shared/DataTable'
+import { Pagination } from '../../components/shared/Pagination'
+import { SelectField } from '../../components/shared/SelectField'
+import type { SelectFieldOption } from '../../components/shared/SelectField'
+import { TextField } from '../../components/shared/TextField'
 import { Spinner } from '../../components/ui/Spinner'
-import { useProducts } from '../../lib/queries/products'
+import { PRODUCTS_PAGE_SIZE, useProducts } from '../../lib/queries/products'
 import type { Product } from '../../lib/queries/products'
 import { useCategories } from '../../lib/queries/categories'
 import { money } from '../../lib/utils'
+
+/** URL search param keys used to persist the list's search/filter/page state. */
+const SEARCH_PARAM = 'q'
+const CATEGORY_PARAM = 'category'
+const ACTIVE_PARAM = 'active'
+const PAGE_PARAM = 'page'
+
+/** How long to wait after the last keystroke before committing the name search to the URL. */
+const SEARCH_DEBOUNCE_MS = 300
+
+const ACTIVE_FILTER_OPTIONS: SelectFieldOption[] = [
+  { value: '', label: 'Todos os status' },
+  { value: 'true', label: 'Ativo' },
+  { value: 'false', label: 'Inativo' },
+]
+
+function parsePageParam(raw: string | null): number {
+  const parsed = raw === null ? 1 : Number.parseInt(raw, 10)
+  return Number.isFinite(parsed) && parsed >= 1 ? parsed : 1
+}
+
+function parseActiveParam(raw: string | null): boolean | undefined {
+  if (raw === 'true') return true
+  if (raw === 'false') return false
+  return undefined
+}
+
+function buildCategoryOptions(categories: Array<{ id: string; label: string }>): SelectFieldOption[] {
+  return [
+    { value: '', label: 'Todas as categorias' },
+    ...categories.map((category) => ({ value: category.id, label: category.label })),
+  ]
+}
 
 function renderThumbnail(product: Product): ReactNode {
   if (product.image_url) {
@@ -131,18 +177,142 @@ function renderAddProductButton(): ReactNode {
   )
 }
 
+type ClearFiltersButtonProps = {
+  onClear: () => void
+}
+
+function ClearFiltersButton({ onClear }: ClearFiltersButtonProps) {
+  return (
+    <button
+      type="button"
+      onClick={onClear}
+      className="inline-flex cursor-pointer items-center gap-2 rounded-pill px-5 text-sm font-medium"
+      style={{
+        height: 'var(--control-h-sm)',
+        border: '1px solid var(--border-soft)',
+        color: 'var(--ink-700)',
+        background: 'var(--surface-raised)',
+        transition: 'opacity var(--dur-fast) var(--ease-out)',
+      }}
+    >
+      <FilterX aria-hidden="true" className="h-4 w-4" />
+      Limpar filtros
+    </button>
+  )
+}
+
 export function ProductListPage() {
-  const { data, isLoading, isError, refetch } = useProducts()
+  const [searchParams, setSearchParams] = useSearchParams()
+
+  const page = parsePageParam(searchParams.get(PAGE_PARAM))
+  const committedSearch = searchParams.get(SEARCH_PARAM) ?? ''
+  const categoryId = searchParams.get(CATEGORY_PARAM) ?? ''
+  const active = parseActiveParam(searchParams.get(ACTIVE_PARAM))
+
+  // The text input needs to reflect every keystroke immediately, but the URL
+  // (and therefore the query) should only update after the admin pauses
+  // typing. `searchInput` is the immediate value; `committedSearch` (read
+  // from the URL above) is the debounced value the query actually uses.
+  const [searchInput, setSearchInput] = useState(committedSearch)
+  const [syncedSearch, setSyncedSearch] = useState(committedSearch)
+  if (committedSearch !== syncedSearch) {
+    // The URL changed for a reason other than our own debounce commit (a
+    // "Limpar filtros" click or browser back/forward) — resync the visible
+    // input to match it. Adjusting state during render, per React's
+    // guidance for syncing state to a changed external value.
+    setSyncedSearch(committedSearch)
+    setSearchInput(committedSearch)
+  }
+
+  const debounceRef = useRef<number | undefined>(undefined)
+
+  const { data, totalCount, isLoading, isError, refetch } = useProducts({
+    page,
+    search: committedSearch,
+    categoryId: categoryId || undefined,
+    active,
+  })
   const categoriesQuery = useCategories()
 
   const categoryLabelById = new Map<string, string>()
   for (const category of categoriesQuery.data ?? []) {
     categoryLabelById.set(category.id, category.label)
   }
+  const categoryOptions = buildCategoryOptions(categoriesQuery.data ?? [])
+
+  const hasActiveFilters = committedSearch.trim() !== '' || categoryId !== '' || active !== undefined
+
+  function commitSearch(value: string) {
+    setSearchParams((previous) => {
+      const next = new URLSearchParams(previous)
+      if (value.trim() === '') {
+        next.delete(SEARCH_PARAM)
+      } else {
+        next.set(SEARCH_PARAM, value)
+      }
+      next.delete(PAGE_PARAM)
+      return next
+    })
+  }
+
+  function handleSearchInputChange(value: string) {
+    setSearchInput(value)
+    if (debounceRef.current !== undefined) {
+      window.clearTimeout(debounceRef.current)
+    }
+    debounceRef.current = window.setTimeout(() => {
+      commitSearch(value)
+    }, SEARCH_DEBOUNCE_MS)
+  }
+
+  function handleCategoryChange(value: string) {
+    setSearchParams((previous) => {
+      const next = new URLSearchParams(previous)
+      if (value === '') {
+        next.delete(CATEGORY_PARAM)
+      } else {
+        next.set(CATEGORY_PARAM, value)
+      }
+      next.delete(PAGE_PARAM)
+      return next
+    })
+  }
+
+  function handleActiveChange(value: string) {
+    setSearchParams((previous) => {
+      const next = new URLSearchParams(previous)
+      if (value === '') {
+        next.delete(ACTIVE_PARAM)
+      } else {
+        next.set(ACTIVE_PARAM, value)
+      }
+      next.delete(PAGE_PARAM)
+      return next
+    })
+  }
+
+  function handlePageChange(nextPage: number) {
+    setSearchParams((previous) => {
+      const next = new URLSearchParams(previous)
+      next.set(PAGE_PARAM, String(nextPage))
+      return next
+    })
+  }
+
+  function handleClearFilters() {
+    if (debounceRef.current !== undefined) {
+      window.clearTimeout(debounceRef.current)
+    }
+    setSearchParams(new URLSearchParams())
+  }
 
   function handleRetry() {
     refetch()
   }
+
+  const isTrueEmpty = !isLoading && !isError && data.length === 0 && !hasActiveFilters
+  const isNoResults = !isLoading && !isError && data.length === 0 && hasActiveFilters
+  const hasRows = !isLoading && !isError && data.length > 0
 
   return (
     <div>
@@ -158,6 +328,47 @@ export function ProductListPage() {
         </h1>
 
         {renderAddProductButton()}
+      </div>
+
+      <div
+        className="mt-6 flex flex-col gap-4 rounded-md p-4 sm:flex-row sm:flex-wrap sm:items-end"
+        style={{ background: 'var(--surface-card)', boxShadow: 'var(--shadow-xs)' }}
+      >
+        <div className="sm:min-w-[220px] sm:flex-1">
+          <TextField
+            id="product-search"
+            label="Buscar por nome"
+            value={searchInput}
+            onChange={handleSearchInputChange}
+            placeholder="Digite o nome do produto…"
+          />
+        </div>
+
+        <div className="sm:min-w-[200px]">
+          <SelectField
+            id="product-category-filter"
+            label="Categoria"
+            value={categoryId}
+            onChange={handleCategoryChange}
+            options={categoryOptions}
+          />
+        </div>
+
+        <div className="sm:min-w-[180px]">
+          <SelectField
+            id="product-active-filter"
+            label="Status"
+            value={active === undefined ? '' : String(active)}
+            onChange={handleActiveChange}
+            options={ACTIVE_FILTER_OPTIONS}
+          />
+        </div>
+
+        {hasActiveFilters && (
+          <div className="sm:pb-0">
+            <ClearFiltersButton onClear={handleClearFilters} />
+          </div>
+        )}
       </div>
 
       <div className="mt-6">
@@ -200,7 +411,7 @@ export function ProductListPage() {
           </div>
         )}
 
-        {!isLoading && !isError && data.length === 0 && (
+        {isTrueEmpty && (
           <div
             className="flex flex-col items-center justify-center gap-3 rounded-md px-6 py-16 text-center"
             style={{ background: 'var(--surface-card)', boxShadow: 'var(--shadow-xs)' }}
@@ -213,13 +424,37 @@ export function ProductListPage() {
           </div>
         )}
 
-        {!isLoading && !isError && data.length > 0 && (
-          <DataTable
-            columns={buildColumns(categoryLabelById)}
-            rows={data}
-            getRowId={(product) => product.id}
-            caption="Lista de produtos"
-          />
+        {isNoResults && (
+          <div
+            className="flex flex-col items-center justify-center gap-3 rounded-md px-6 py-16 text-center"
+            style={{ background: 'var(--surface-card)', boxShadow: 'var(--shadow-xs)' }}
+          >
+            <SearchX aria-hidden="true" className="h-8 w-8" style={{ color: 'var(--ink-300)' }} />
+            <p className="text-sm" style={{ color: 'var(--ink-700)' }}>
+              Nenhum produto corresponde à busca ou aos filtros aplicados.
+            </p>
+            <ClearFiltersButton onClear={handleClearFilters} />
+          </div>
+        )}
+
+        {hasRows && (
+          <>
+            <DataTable
+              columns={buildColumns(categoryLabelById)}
+              rows={data}
+              getRowId={(product) => product.id}
+              caption="Lista de produtos"
+            />
+
+            <div className="mt-4">
+              <Pagination
+                page={page}
+                pageSize={PRODUCTS_PAGE_SIZE}
+                totalItems={totalCount}
+                onPageChange={handlePageChange}
+              />
+            </div>
+          </>
         )}
       </div>
     </div>
