@@ -1,5 +1,5 @@
-import { useRef, useState, type ReactNode } from 'react'
-import { Link, useSearchParams } from 'react-router-dom'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
+import { Link, useLocation, useSearchParams } from 'react-router-dom'
 import {
   AlertTriangle,
   FilterX,
@@ -20,6 +20,8 @@ import { PRODUCTS_PAGE_SIZE, useProducts } from '../../lib/queries/products'
 import type { Product } from '../../lib/queries/products'
 import { useCategories } from '../../lib/queries/categories'
 import { money } from '../../lib/utils'
+import { PRODUCTS_LIST_PATH } from '../../router/productListReturnPath'
+import type { ProductFormLocationState } from '../../router/productListReturnPath'
 import { ProductDeleteDialog } from './ProductDeleteDialog'
 import { ProductRowActions } from './ProductRowActions'
 import { ProductStatusToggle } from './ProductStatusToggle'
@@ -83,6 +85,7 @@ function renderThumbnail(product: Product): ReactNode {
 function buildColumns(
   categoryLabelById: Map<string, string>,
   onDeleteRequest: (product: Product) => void,
+  listReturnPath: string,
 ): Array<DataTableColumn<Product>> {
   return [
     {
@@ -136,16 +139,21 @@ function buildColumns(
       key: 'actions',
       header: 'Ações',
       render: (product) => (
-        <ProductRowActions product={product} onDeleteRequest={onDeleteRequest} />
+        <ProductRowActions
+          product={product}
+          onDeleteRequest={onDeleteRequest}
+          listReturnPath={listReturnPath}
+        />
       ),
     },
   ]
 }
 
-function renderAddProductButton(): ReactNode {
+function renderAddProductButton(newProductLinkState: ProductFormLocationState): ReactNode {
   return (
     <Link
       to="/products/new"
+      state={newProductLinkState}
       className="inline-flex shrink-0 items-center gap-2 rounded-pill px-5 text-sm font-medium"
       style={{
         height: 'var(--control-h-md)',
@@ -186,7 +194,16 @@ function ClearFiltersButton({ onClear }: ClearFiltersButtonProps) {
 }
 
 export function ProductListPage() {
+  const location = useLocation()
   const [searchParams, setSearchParams] = useSearchParams()
+
+  // Carried as router `state` on the "Novo produto" and "Editar" links so
+  // `ProductNewPage`/`ProductEditPage` can restore the admin's current
+  // search, filter, and page selections after a successful create or edit
+  // (Should 50), without `/products/new`/`/products/:id/edit` needing their
+  // own querystring.
+  const listReturnPath = `${PRODUCTS_LIST_PATH}${location.search}`
+  const newProductLinkState: ProductFormLocationState = { from: listReturnPath }
 
   const page = parsePageParam(searchParams.get(PAGE_PARAM))
   const committedSearch = searchParams.get(SEARCH_PARAM) ?? ''
@@ -215,12 +232,40 @@ export function ProductListPage() {
   // confirmation can ever be open across the whole list at a time.
   const [productPendingDelete, setProductPendingDelete] = useState<Product | null>(null)
 
-  const { data, totalCount, isLoading, isError, refetch } = useProducts({
+  const { data, totalCount, totalPages, isLoading, isError, refetch } = useProducts({
     page,
     search: committedSearch,
     categoryId: categoryId || undefined,
     active,
   })
+
+  // True once the query has resolved and confirms the URL's `page` is past
+  // the last page that actually has rows (e.g. the admin deleted the last
+  // product on the last page, or landed here via a stale link/back-forward
+  // navigation). `totalCount > 0` distinguishes this from a genuine "zero
+  // products" result, which must keep rendering the true-empty/no-results
+  // state rather than being redirected. Gated on `!isLoading && !isError` so
+  // we never clamp against stale or incomplete data.
+  const isPageOutOfRange = !isLoading && !isError && totalCount > 0 && page > totalPages
+
+  // Redirecting to the last valid page is a sync of the URL to server data
+  // that only resolves after the fetch completes, so — unlike the search
+  // input's render-time resync above (which corrects local state to an
+  // already-known URL value) — this belongs in an effect. `isPageOutOfRange`
+  // flips back to `false` as soon as the URL page is clamped, so this can't
+  // loop.
+  useEffect(() => {
+    if (!isPageOutOfRange) return
+    setSearchParams(
+      (previous) => {
+        const next = new URLSearchParams(previous)
+        next.set(PAGE_PARAM, String(totalPages))
+        return next
+      },
+      { replace: true },
+    )
+  }, [isPageOutOfRange, totalPages, setSearchParams])
+
   const categoriesQuery = useCategories()
   const categoriesFailed = categoriesQuery.isError
 
@@ -312,9 +357,13 @@ export function ProductListPage() {
     setProductPendingDelete(null)
   }
 
-  const isTrueEmpty = !isLoading && !isError && data.length === 0 && !hasActiveFilters
-  const isNoResults = !isLoading && !isError && data.length === 0 && hasActiveFilters
-  const hasRows = !isLoading && !isError && data.length > 0
+  // Treat an out-of-range page the same as still loading: a corrected page
+  // has already been requested (see the effect above) and its data is on
+  // the way, so showing the true-empty state here would be misleading.
+  const showLoadingState = isLoading || isPageOutOfRange
+  const isTrueEmpty = !showLoadingState && !isError && data.length === 0 && !hasActiveFilters
+  const isNoResults = !showLoadingState && !isError && data.length === 0 && hasActiveFilters
+  const hasRows = !showLoadingState && !isError && data.length > 0
 
   return (
     <div>
@@ -329,7 +378,7 @@ export function ProductListPage() {
           Produtos
         </h1>
 
-        {renderAddProductButton()}
+        {renderAddProductButton(newProductLinkState)}
       </div>
 
       <div
@@ -391,7 +440,7 @@ export function ProductListPage() {
       </div>
 
       <div className="mt-6">
-        {isLoading && (
+        {showLoadingState && (
           <div
             className="flex flex-col items-center justify-center gap-3 rounded-md py-16"
             style={{ background: 'var(--surface-card)', boxShadow: 'var(--shadow-xs)' }}
@@ -403,7 +452,7 @@ export function ProductListPage() {
           </div>
         )}
 
-        {!isLoading && isError && (
+        {!showLoadingState && isError && (
           <div
             className="flex flex-col items-center justify-center gap-3 rounded-md px-6 py-16 text-center"
             style={{ background: 'var(--surface-card)', boxShadow: 'var(--shadow-xs)' }}
@@ -439,7 +488,7 @@ export function ProductListPage() {
             <p className="text-sm" style={{ color: 'var(--ink-700)' }}>
               Nenhum produto cadastrado ainda.
             </p>
-            {renderAddProductButton()}
+            {renderAddProductButton(newProductLinkState)}
           </div>
         )}
 
@@ -459,7 +508,7 @@ export function ProductListPage() {
         {hasRows && (
           <>
             <DataTable
-              columns={buildColumns(categoryLabelById, handleDeleteRequest)}
+              columns={buildColumns(categoryLabelById, handleDeleteRequest, listReturnPath)}
               rows={data}
               getRowId={(product) => product.id}
               caption="Lista de produtos"

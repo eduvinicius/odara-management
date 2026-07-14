@@ -1,10 +1,11 @@
-import { useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { useToast } from '../../components/shared/Toast'
 import { createEmptyProductFormValues } from '../../lib/forms/productForm'
 import type { ProductFormValues } from '../../lib/forms/productForm'
 import { toProductScalarFields } from '../../lib/forms/productMutationInput'
 import { useCreateProduct } from '../../lib/mutations/products'
 import type { CreateProductInput } from '../../lib/mutations/products'
+import { resolveProductListReturnPath } from '../../router/productListReturnPath'
 import { ProductForm } from './ProductForm'
 
 /** Shown when creating a product fails, regardless of the underlying cause. */
@@ -29,9 +30,14 @@ function toCreateProductInput(values: ProductFormValues): CreateProductInput {
  * seeded from `createEmptyProductFormValues()`, and wires its `onSubmit` to
  * `useCreateProduct`.
  *
- * On success: shows a success toast and redirects to `/products` (Must 41),
- * where the newly created product appears at the top of the freshly
- * invalidated, newest-first list.
+ * On success: shows a success toast and redirects back to the product list
+ * (Must 41), where the newly created product appears at the top of the
+ * freshly invalidated, newest-first list. The redirect target is the list
+ * path the admin came from — including its search, filter, and page
+ * selections — carried via router `state` on the "Novo produto" link
+ * (Should 50); if that state is absent (e.g. this page was opened directly
+ * via a bookmarked URL or a page refresh), it falls back to the bare
+ * `/products` path.
  *
  * On failure: shows an error toast and stays on this page with the form's
  * entered values intact, so the admin can fix the issue and retry — no
@@ -41,6 +47,7 @@ function toCreateProductInput(values: ProductFormValues): CreateProductInput {
  */
 export function ProductNewPage() {
   const navigate = useNavigate()
+  const location = useLocation()
   const toast = useToast()
   const createMutation = useCreateProduct()
 
@@ -48,7 +55,7 @@ export function ProductNewPage() {
     try {
       await createMutation.mutateAsync(toCreateProductInput(values))
       toast.success('Produto criado com sucesso.')
-      navigate('/products')
+      navigate(resolveProductListReturnPath(location.state))
     } catch {
       toast.error(CREATE_ERROR_MESSAGE)
     }
