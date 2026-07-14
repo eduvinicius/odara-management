@@ -121,3 +121,49 @@ export function useProducts(params: UseProductsParams = {}): UseProductsResult {
     refetch: query.refetch,
   }
 }
+
+export type UseProductResult = {
+  data: Product | null
+  isLoading: boolean
+  isFetching: boolean
+  isError: boolean
+  error: Error | null
+  refetch: UseQueryResult<Product, Error>['refetch']
+}
+
+async function fetchProduct(id: string): Promise<Product> {
+  const { data, error } = await supabase
+    .from('Products')
+    .select(PRODUCT_COLUMNS)
+    .eq('id', id)
+    .single()
+
+  if (error) {
+    throw new Error(error.message)
+  }
+
+  return data
+}
+
+/**
+ * Fetches a single product's full current data by `id`.
+ *
+ * Consumed by the product edit page to pre-fill the edit form with the
+ * product's current values before the form is initialized.
+ */
+export function useProduct(id: string): UseProductResult {
+  const query = useQuery({
+    queryKey: ['products', id],
+    queryFn: () => fetchProduct(id),
+    enabled: id !== '',
+  })
+
+  return {
+    data: query.data ?? null,
+    isLoading: query.isLoading,
+    isFetching: query.isFetching,
+    isError: query.isError,
+    error: query.error,
+    refetch: query.refetch,
+  }
+}
