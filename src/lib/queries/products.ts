@@ -16,6 +16,7 @@ export type Product = {
   badge_label: string | null
   active: boolean
   description: string | null
+  created_at: string
 }
 
 /** Number of products shown per page in the product list. */
@@ -28,7 +29,7 @@ export const PRODUCTS_PAGE_SIZE = 20
  * fetch.
  */
 export const PRODUCT_COLUMNS =
-  'id, name, category_id, price, original_price, image_url, images, featured, badge_tone, badge_label, active, description'
+  'id, name, category_id, price, original_price, image_url, images, featured, badge_tone, badge_label, active, description, created_at'
 
 export type UseProductsParams = {
   /** 1-based page number. Defaults to 1. */
@@ -83,10 +84,9 @@ async function fetchProducts(params: ResolvedParams): Promise<FetchProductsResul
     query = query.eq('active', active)
   }
 
-  // The `Products` table has no `created_at` column (confirmed against the
-  // live schema), so "newest first" is approximated by sorting on `id`
-  // descending — the closest available proxy for insertion order.
-  const { data, error, count } = await query.order('id', { ascending: false }).range(from, to)
+  const { data, error, count } = await query
+    .order('created_at', { ascending: false })
+    .range(from, to)
 
   if (error) {
     throw new Error(error.message)
