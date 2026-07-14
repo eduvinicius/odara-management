@@ -21,7 +21,13 @@ export type Product = {
 /** Number of products shown per page in the product list. */
 export const PRODUCTS_PAGE_SIZE = 20
 
-const PRODUCT_COLUMNS =
+/**
+ * Exported so `lib/mutations/products.ts` can request the exact same column
+ * shape back from `insert(...).select(PRODUCT_COLUMNS)`, keeping the row
+ * returned by a create mutation identical to what `useProducts`/`useProduct`
+ * fetch.
+ */
+export const PRODUCT_COLUMNS =
   'id, name, category_id, price, original_price, image_url, images, featured, badge_tone, badge_label, active, description'
 
 export type UseProductsParams = {
