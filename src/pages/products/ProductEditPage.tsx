@@ -14,6 +14,17 @@ import { ProductForm } from './ProductForm'
 /** Shown when updating a product fails, regardless of the underlying cause. */
 const UPDATE_ERROR_MESSAGE = 'Não foi possível salvar as alterações do produto. Tente novamente.'
 
+/** Shown when the product itself saved successfully. */
+const UPDATE_SUCCESS_MESSAGE = 'Produto atualizado com sucesso.'
+
+/**
+ * Shown when the product saved successfully but the best-effort cleanup of
+ * now-orphaned old images in storage failed afterward — the edit was NOT
+ * lost, so this is a softer, non-blocking notice rather than an error.
+ */
+const UPDATE_SUCCESS_CLEANUP_FAILED_MESSAGE =
+  'Produto atualizado, mas houve uma falha ao limpar imagens antigas.'
+
 /**
  * Parses the form's string/UI-only shape into the update mutation's typed
  * input. Scalar fields are parsed by the shared `toProductScalarFields`
@@ -117,6 +128,9 @@ function ProductLoadStatus({ message, children }: ProductLoadStatusProps) {
  * wires the form's `onSubmit` to `useUpdateProduct`.
  *
  * On success: shows a success toast and redirects to `/products` (Must 42).
+ * If the DB write succeeded but the mutation's best-effort image cleanup
+ * failed, a softer success toast is shown instead — the edit itself is never
+ * presented as a failure just because leftover storage cleanup didn't run.
  *
  * On failure: shows an error toast and stays on this page with the form's
  * entered values intact — no partial edit is ever applied, since
@@ -135,10 +149,12 @@ export function ProductEditPage() {
     if (!id) return
 
     try {
-      await updateMutation.mutateAsync(
+      const result = await updateMutation.mutateAsync(
         toUpdateProductInput(id, values, productQuery.data?.image_url != null),
       )
-      toast.success('Produto atualizado com sucesso.')
+      toast.success(
+        result.imageCleanupFailed ? UPDATE_SUCCESS_CLEANUP_FAILED_MESSAGE : UPDATE_SUCCESS_MESSAGE,
+      )
       navigate('/products')
     } catch {
       toast.error(UPDATE_ERROR_MESSAGE)

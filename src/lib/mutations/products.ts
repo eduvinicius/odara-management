@@ -190,7 +190,22 @@ export type UpdateProductInput = {
   removedGalleryImageUrls: readonly string[]
 }
 
-async function updateProduct(input: UpdateProductInput): Promise<Product> {
+/**
+ * Result of `updateProduct`/`useUpdateProduct`. The DB write is what the
+ * admin's edit actually consists of, so its success is the only thing this
+ * mutation ever rejects over. The post-write storage cleanup (deleting
+ * now-orphaned cover/gallery files) is best-effort: if it fails, the update
+ * still resolves successfully with `imageCleanupFailed: true` so the caller
+ * can show a softer, distinct message instead of a hard failure toast — the
+ * admin's edit was NOT lost.
+ */
+export type UpdateProductResult = {
+  product: Product
+  /** `true` when the DB update succeeded but deleting the now-orphaned old images from storage afterward failed. The update itself did NOT fail. */
+  imageCleanupFailed: boolean
+}
+
+async function updateProduct(input: UpdateProductInput): Promise<UpdateProductResult> {
   // Uploads happen before the update and are never wrapped in a try/catch
   // that swallows failures: if `uploadProductImage`/`uploadProductImages`
   // rejects, this function rejects too and neither the DB update below nor
@@ -244,11 +259,25 @@ async function updateProduct(input: UpdateProductInput): Promise<Product> {
     imagesToDelete.push(input.existingCoverImageUrl)
   }
 
+  // Storage cleanup is best-effort and intentionally isolated from the DB
+  // write above: the update has already committed by this point, so a
+  // cleanup failure here must NOT reject this function. If it did, the
+  // caller's `catch` would show a hard "failed" error toast for an edit that
+  // actually succeeded, and `onSuccess` would never invalidate the
+  // `['products']` cache — leaving the admin looking at stale data and
+  // possibly retrying an update that already went through.
+  let imageCleanupFailed = false
+
   if (imagesToDelete.length > 0) {
-    await deleteProductImages(imagesToDelete)
+    try {
+      await deleteProductImages(imagesToDelete)
+    } catch (cleanupError) {
+      console.error('Failed to delete orphaned product images after update:', cleanupError)
+      imageCleanupFailed = true
+    }
   }
 
-  return data
+  return { product: data, imageCleanupFailed }
 }
 
 /**
@@ -266,20 +295,29 @@ async function updateProduct(input: UpdateProductInput): Promise<Product> {
  * specific `['products', id]` entry so the list and any cached single-
  * product view reflect the change immediately.
  *
+ * Resolves with `imageCleanupFailed: true` (instead of rejecting) when the DB
+ * update itself succeeded but the subsequent best-effort storage cleanup
+ * failed, so a cleanup failure never masks a successful edit as a hard
+ * failure — see the cleanup step in `updateProduct` above.
+ *
  * Consumed by the product edit page (Task 23), which is responsible for
  * parsing/validating `ProductFormValues` into an `UpdateProductInput`
  * (including splitting `existingGalleryImages` into kept vs removed URLs)
  * and for showing a toast on success/error — this hook only exposes
  * pending/error state, it does not notify the admin itself.
  */
-export function useUpdateProduct(): UseMutationResult<Product, Error, UpdateProductInput> {
+export function useUpdateProduct(): UseMutationResult<
+  UpdateProductResult,
+  Error,
+  UpdateProductInput
+> {
   const queryClient = useQueryClient()
 
   return useMutation({
     mutationFn: updateProduct,
-    onSuccess: (data) => {
+    onSuccess: (result) => {
       queryClient.invalidateQueries({ queryKey: ['products'] })
-      queryClient.invalidateQueries({ queryKey: ['products', data.id] })
+      queryClient.invalidateQueries({ queryKey: ['products', result.product.id] })
     },
   })
 }
@@ -293,7 +331,22 @@ export function useUpdateProduct(): UseMutationResult<Product, Error, UpdateProd
  */
 export type DeleteProductInput = Pick<Product, 'id' | 'image_url' | 'images'>
 
-async function deleteProduct(input: DeleteProductInput): Promise<void> {
+/**
+ * Result of `deleteProduct`/`useDeleteProduct`. The DB row delete is what
+ * Must 54 (permanent row removal) actually requires, so its success is the
+ * only thing this mutation ever rejects over. The post-delete storage
+ * cleanup (Must 55, removing the now-unreferenced cover/gallery files) is
+ * best-effort: if it fails, the delete still resolves successfully with
+ * `imageCleanupFailed: true` instead of rejecting, so the caller can show a
+ * softer, distinct message instead of a hard failure toast — the product was
+ * NOT left in place.
+ */
+export type DeleteProductResult = {
+  /** `true` when the DB delete succeeded but removing its images from storage afterward failed. The delete itself did NOT fail. */
+  imageCleanupFailed: boolean
+}
+
+async function deleteProduct(input: DeleteProductInput): Promise<DeleteProductResult> {
   // Order of operations: the DB row is deleted FIRST, storage cleanup
   // SECOND. This is the opposite order from `updateProduct` above, and is
   // deliberate:
@@ -302,12 +355,7 @@ async function deleteProduct(input: DeleteProductInput): Promise<void> {
   //   strongest safety constraint on *delete* specifically, and Must 54
   //   requires the row removal itself to be permanent. Deleting the row
   //   first means: if the row delete fails, nothing has happened yet (safe,
-  //   retryable) — no files were touched. If the row delete succeeds but the
-  //   subsequent storage cleanup fails, the row is still gone (Must 54 is
-  //   satisfied) and the error surfaces to the caller so it can be retried
-  //   or surfaced to the admin; the only downside is temporarily orphaned
-  //   files in storage, which is a lesser failure than a dangling DB row
-  //   pointing at deleted files (broken images in a still-visible product).
+  //   retryable) — no files were touched.
   // - Deleting storage first would risk the reverse: files gone, but the
   //   product row still exists and still references them if the DB delete
   //   then fails — a worse, more visible admin-facing failure (broken
@@ -328,9 +376,27 @@ async function deleteProduct(input: DeleteProductInput): Promise<void> {
     imagesToDelete.push(...input.images)
   }
 
+  // Storage cleanup is best-effort and intentionally isolated from the DB
+  // delete above: the row is already gone by this point (Must 54 is
+  // satisfied), so a cleanup failure here must NOT reject this function. If
+  // it did, the caller's `catch` would show a hard "failed" error toast for
+  // a delete that actually succeeded, `onSuccess` would never invalidate the
+  // `['products']` cache, and the admin could re-attempt a delete on a
+  // product that's already gone. The only downside of swallowing this error
+  // is temporarily orphaned files in storage, which is a lesser failure than
+  // misleading the admin about whether their delete worked.
+  let imageCleanupFailed = false
+
   if (imagesToDelete.length > 0) {
-    await deleteProductImages(imagesToDelete)
+    try {
+      await deleteProductImages(imagesToDelete)
+    } catch (cleanupError) {
+      console.error('Failed to delete product images after row delete:', cleanupError)
+      imageCleanupFailed = true
+    }
   }
+
+  return { imageCleanupFailed }
 }
 
 /**
@@ -341,14 +407,20 @@ async function deleteProduct(input: DeleteProductInput): Promise<void> {
  *
  * On success, invalidates both the `['products']` list cache and the
  * specific `['products', id]` entry so the list stops showing the deleted
- * product immediately.
+ * product immediately — this happens whenever the DB row delete succeeded,
+ * even if the follow-up storage cleanup failed (see `deleteProduct` above:
+ * that resolves with `imageCleanupFailed: true` rather than rejecting).
  *
  * Consumed by the product list's delete action (Task 18), which shows a
  * `<ConfirmDialog>` before calling this mutation and a toast on
  * success/error — this hook only exposes pending/error state, it does not
  * notify the admin itself.
  */
-export function useDeleteProduct(): UseMutationResult<void, Error, DeleteProductInput> {
+export function useDeleteProduct(): UseMutationResult<
+  DeleteProductResult,
+  Error,
+  DeleteProductInput
+> {
   const queryClient = useQueryClient()
 
   return useMutation({

@@ -6,6 +6,18 @@ import type { Product } from '../../lib/queries/products'
 /** Shown when a product delete fails, regardless of the underlying cause. */
 const DELETE_ERROR_MESSAGE = 'Não foi possível excluir o produto. Tente novamente.'
 
+/**
+ * Builds the success toast message for a completed delete. When the DB row
+ * delete succeeded but the mutation's best-effort image cleanup failed
+ * afterward, a softer variant is shown instead — the product IS gone either
+ * way, so this is never presented as a hard failure.
+ */
+function buildDeleteSuccessMessage(productName: string, imageCleanupFailed: boolean): string {
+  return imageCleanupFailed
+    ? `"${productName}" foi excluído, mas houve uma falha ao limpar suas imagens.`
+    : `"${productName}" foi excluído com sucesso.`
+}
+
 type ProductDeleteDialogProps = {
   /** The product pending deletion, or `null` when no delete is in progress (dialog closed). */
   product: Product | null
@@ -33,9 +45,9 @@ export function ProductDeleteDialog({ product, onClose }: ProductDeleteDialogPro
     mutate(
       { id: product.id, image_url: product.image_url, images: product.images },
       {
-        onSuccess: () => {
+        onSuccess: (result) => {
           onClose()
-          toast.success(`"${product.name}" foi excluído com sucesso.`)
+          toast.success(buildDeleteSuccessMessage(product.name, result.imageCleanupFailed))
         },
         onError: () => {
           onClose()
