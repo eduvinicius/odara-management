@@ -6,6 +6,16 @@ import type { Category } from '../queries/categories'
 const UNIQUE_VIOLATION_CODE = '23505'
 
 /**
+ * Thrown by `createCategory` when the computed `id` already matches an
+ * existing category. A distinct subclass (rather than a plain `Error`) so
+ * callers — namely the category creation page (Task 12) — can reliably
+ * distinguish this specific, already-admin-friendly conflict message from a
+ * generic failure and surface it as-is instead of falling back to a fixed
+ * "something went wrong" toast.
+ */
+export class CategoryIdConflictError extends Error {}
+
+/**
  * Input for `useCreateCategory`. `id` and `ord` are already computed by the
  * caller (see `lib/forms/categoryForm.ts`) — this mutation only persists
  * whatever it is given, it does not derive either value itself.
@@ -30,7 +40,7 @@ async function createCategory(input: CreateCategoryInput): Promise<Category> {
     // clear, conflict-naming message in that race-condition fallback case
     // instead of a raw Postgres constraint message.
     if (error.code === UNIQUE_VIOLATION_CODE) {
-      throw new Error(`Já existe uma categoria com o identificador "${input.id}".`)
+      throw new CategoryIdConflictError(`Já existe uma categoria com o identificador "${input.id}".`)
     }
     throw new Error(error.message)
   }
