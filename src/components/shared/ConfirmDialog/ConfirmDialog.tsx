@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useId, useRef } from 'react'
 import type { MouseEvent, ReactEventHandler } from 'react'
 import { Spinner } from '../../ui/Spinner'
 import type { ConfirmDialogProps } from './confirmDialog.types'
@@ -22,6 +22,8 @@ export function ConfirmDialog({
   onCancel,
 }: ConfirmDialogProps) {
   const dialogRef = useRef<HTMLDialogElement>(null)
+  const titleId = useId()
+  const messageId = useId()
 
   // Syncs the imperative <dialog> open/closed state with the `isOpen` prop.
   // `showModal()`/`close()` have no declarative equivalent, so this is one
@@ -63,8 +65,8 @@ export function ConfirmDialog({
       ref={dialogRef}
       onCancel={handleNativeCancel}
       onClick={handleBackdropClick}
-      aria-labelledby="confirm-dialog-title"
-      aria-describedby="confirm-dialog-message"
+      aria-labelledby={titleId}
+      aria-describedby={messageId}
       className="confirm-dialog m-auto w-[calc(100%-2rem)] max-w-md border-0 p-0 backdrop:bg-transparent"
       style={{
         background: 'var(--surface-card)',
@@ -74,14 +76,14 @@ export function ConfirmDialog({
     >
       <div className="flex flex-col gap-4 p-6">
         <h2
-          id="confirm-dialog-title"
+          id={titleId}
           className="text-lg font-semibold"
           style={{ color: 'var(--ink-900)', fontFamily: 'var(--font-serif)' }}
         >
           {title}
         </h2>
 
-        <div id="confirm-dialog-message" className="text-sm" style={{ color: 'var(--ink-700)' }}>
+        <div id={messageId} className="text-sm" style={{ color: 'var(--ink-700)' }}>
           {message}
         </div>
 
