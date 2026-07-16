@@ -169,6 +169,12 @@
    ────────────────────────────────────────────────────────────── */
 
 @theme inline {
+  /* Breakpoints — `nav` gates the admin shell's sidebar/topbar layout switch
+     (Must 17: a pure CSS breakpoint, never a `window.innerWidth` listener).
+     Tailwind v4 auto-generates both `nav:` (min-width) and `max-nav:`
+     (max-width, one pixel below) variants from this token. */
+  --breakpoint-nav: 960px;
+
   /* Fonts */
   --font-sans:   var(--font-sans);
   --font-serif:  var(--font-serif);
