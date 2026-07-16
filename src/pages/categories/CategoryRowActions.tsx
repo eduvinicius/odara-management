@@ -2,7 +2,12 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Pencil, Trash2 } from 'lucide-react'
 import { ConfirmDialog } from '../../components/shared/ConfirmDialog'
+import { useToast } from '../../components/shared/Toast'
+import { useDeleteCategory } from '../../lib/mutations/categories'
 import type { CategoryWithProductCount } from '../../lib/queries/categories'
+
+/** Shown when a category delete fails, regardless of the underlying cause. */
+const DELETE_ERROR_MESSAGE = 'Não foi possível excluir a categoria. Tente novamente.'
 
 type CategoryRowActionsProps = {
   /** The category row these actions apply to. */
@@ -30,13 +35,18 @@ function buildAssignedProductsMessage(productCount: number): string {
  * surfacing the problem after a delete attempt.
  *
  * When zero products are assigned, activating delete opens a confirmation
- * dialog stating the action is irreversible (Must 17, Must 18). Actually
- * performing the delete against Supabase and showing success/error feedback
- * is wired in Task 10 — this dialog only opens/closes for now.
+ * dialog stating the action is irreversible (Must 17, Must 18). Confirming
+ * permanently deletes the category (Must 19), shows a success toast (Must
+ * 20), and — since `useDeleteCategory` invalidates the `['categories']`
+ * cache on success — leaves the admin on the list with the row removed
+ * (Must 24) without any extra navigation. A failed delete shows an error
+ * toast (Must 21) and leaves the category in place.
  */
 export function CategoryRowActions({ category }: CategoryRowActionsProps) {
   const [isConfirmOpen, setIsConfirmOpen] = useState(false)
   const hasAssignedProducts = category.productCount > 0
+  const toast = useToast()
+  const { mutate, isPending } = useDeleteCategory()
 
   function handleDeleteClick() {
     if (hasAssignedProducts) return
@@ -44,7 +54,24 @@ export function CategoryRowActions({ category }: CategoryRowActionsProps) {
   }
 
   function handleCloseDialog() {
+    if (isPending) return
     setIsConfirmOpen(false)
+  }
+
+  function handleConfirmDelete() {
+    mutate(
+      { id: category.id },
+      {
+        onSuccess: () => {
+          setIsConfirmOpen(false)
+          toast.success(`"${category.label}" foi excluída com sucesso.`)
+        },
+        onError: () => {
+          setIsConfirmOpen(false)
+          toast.error(DELETE_ERROR_MESSAGE)
+        },
+      },
+    )
   }
 
   return (
@@ -83,7 +110,8 @@ export function CategoryRowActions({ category }: CategoryRowActionsProps) {
         title={`Excluir "${category.label}"?`}
         message="Esta ação é permanente e não pode ser desfeita: a categoria será removida definitivamente."
         confirmLabel="Excluir"
-        onConfirm={handleCloseDialog}
+        isConfirming={isPending}
+        onConfirm={handleConfirmDelete}
         onCancel={handleCloseDialog}
       />
     </div>
