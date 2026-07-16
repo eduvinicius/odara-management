@@ -179,7 +179,6 @@ export function ProductForm({
         name="name"
         validators={{
           onChange: ({ value }) => validateProductName(value),
-          onBlur: ({ value }) => validateProductName(value),
         }}
       >
         {(field) => (
@@ -201,7 +200,6 @@ export function ProductForm({
         name="category_id"
         validators={{
           onChange: ({ value }) => validateProductCategory(value),
-          onBlur: ({ value }) => validateProductCategory(value),
         }}
       >
         {(field) => (
@@ -230,7 +228,6 @@ export function ProductForm({
         name="price"
         validators={{
           onChange: ({ value }) => validateProductPrice(value),
-          onBlur: ({ value }) => validateProductPrice(value),
         }}
       >
         {(field) => (
@@ -256,9 +253,6 @@ export function ProductForm({
           onChange: ({ value, fieldApi }) =>
             validateProductOriginalPrice(value, fieldApi.form.getFieldValue('price')),
           onChangeListenTo: ['price'],
-          onBlur: ({ value, fieldApi }) =>
-            validateProductOriginalPrice(value, fieldApi.form.getFieldValue('price')),
-          onBlurListenTo: ['price'],
         }}
       >
         {(field) => (
@@ -283,9 +277,6 @@ export function ProductForm({
           onChange: ({ value, fieldApi }) =>
             validateProductBadgeTone(value, fieldApi.form.getFieldValue('badge_label')),
           onChangeListenTo: ['badge_label'],
-          onBlur: ({ value, fieldApi }) =>
-            validateProductBadgeTone(value, fieldApi.form.getFieldValue('badge_label')),
-          onBlurListenTo: ['badge_label'],
         }}
       >
         {(field) => (
@@ -308,9 +299,6 @@ export function ProductForm({
           onChange: ({ value, fieldApi }) =>
             validateProductBadgeLabel(value, fieldApi.form.getFieldValue('badge_tone')),
           onChangeListenTo: ['badge_tone'],
-          onBlur: ({ value, fieldApi }) =>
-            validateProductBadgeLabel(value, fieldApi.form.getFieldValue('badge_tone')),
-          onBlurListenTo: ['badge_tone'],
         }}
       >
         {(field) => (
@@ -369,7 +357,6 @@ export function ProductForm({
         name="description"
         validators={{
           onChange: ({ value }) => validateProductDescription(value),
-          onBlur: ({ value }) => validateProductDescription(value),
         }}
       >
         {(field) => (
