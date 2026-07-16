@@ -4,6 +4,9 @@ import { DashboardPage } from './pages/DashboardPage'
 import { ProductListPage } from './pages/products/ProductListPage'
 import { ProductNewPage } from './pages/products/ProductNewPage'
 import { ProductEditPage } from './pages/products/ProductEditPage'
+import { CategoryListPage } from './pages/categories/CategoryListPage'
+import { CategoryNewPage } from './pages/categories/CategoryNewPage'
+import { CategoryEditPage } from './pages/categories/CategoryEditPage'
 import { ProtectedRoute } from './router/ProtectedRoute'
 import { GuestRoute } from './router/GuestRoute'
 import { AdminShell } from './components/layout/AdminShell'
@@ -24,6 +27,9 @@ const router = createBrowserRouter([
           { path: '/products', element: <ProductListPage /> },
           { path: '/products/new', element: <ProductNewPage /> },
           { path: '/products/:id/edit', element: <ProductEditPage /> },
+          { path: '/categories', element: <CategoryListPage /> },
+          { path: '/categories/new', element: <CategoryNewPage /> },
+          { path: '/categories/:id/edit', element: <CategoryEditPage /> },
         ],
       },
     ],
