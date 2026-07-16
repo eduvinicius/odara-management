@@ -89,6 +89,14 @@ export type ProductFormProps = {
  * list failed to load, so the form is disabled and a retry action
  * (`categoriesQuery.refetch()`) is offered instead of the "create a
  * category" call-to-action.
+ *
+ * Page layout (Task 6): a two-column grid at/above the `nav` breakpoint —
+ * form fields on the left, a sticky live preview (Task 5) on the right —
+ * collapsing to a single stacked column below it, with the preview under
+ * the fields. The category-loading notices above stay full-width, outside
+ * the grid, at every breakpoint (Should 39). Page padding is applied here
+ * so both `ProductNewPage` and `ProductEditPage` inherit the entire layout
+ * — grid, preview, and padding — without any page-specific code (Must 23).
  */
 export function ProductForm({
   initialValues,
@@ -124,10 +132,10 @@ export function ProductForm({
   }
 
   return (
-    <form onSubmit={handleFormSubmit} className="flex max-w-2xl flex-col gap-6" noValidate>
+    <div className="flex flex-col pt-6 px-5 pb-15 nav:pt-11 nav:px-14 nav:pb-20">
       {categoriesFailed && (
         <div
-          className="flex flex-col items-start gap-3 rounded-md p-4 sm:flex-row sm:items-center"
+          className="mb-6 flex flex-col items-start gap-3 rounded-md p-4 sm:flex-row sm:items-center"
           style={{ background: 'var(--surface-card)', boxShadow: 'var(--shadow-xs)' }}
         >
           <AlertTriangle aria-hidden="true" className="h-6 w-6 shrink-0" style={{ color: 'var(--rose-400)' }} />
@@ -154,7 +162,7 @@ export function ProductForm({
 
       {hasNoCategories && (
         <div
-          className="flex flex-col items-start gap-3 rounded-md p-4 sm:flex-row sm:items-center"
+          className="mb-6 flex flex-col items-start gap-3 rounded-md p-4 sm:flex-row sm:items-center"
           style={{ background: 'var(--surface-card)', boxShadow: 'var(--shadow-xs)' }}
         >
           <FolderPlus aria-hidden="true" className="h-6 w-6 shrink-0" style={{ color: 'var(--gold-400)' }} />
@@ -176,281 +184,304 @@ export function ProductForm({
         </div>
       )}
 
-      <form.Field
-        name="name"
-        validators={{
-          onChange: ({ value }) => validateProductName(value),
-        }}
+      <form
+        onSubmit={handleFormSubmit}
+        className="grid grid-cols-1 gap-8 nav:grid-cols-[minmax(0,1.6fr)_minmax(280px,1fr)] nav:items-start nav:gap-10"
+        noValidate
       >
-        {(field) => (
-          <TextField
-            id="product-name"
-            label="Nome do produto"
-            value={field.state.value}
-            onChange={field.handleChange}
-            onBlur={field.handleBlur}
-            required
-            disabled={fieldsDisabled}
-            maxLength={PRODUCT_NAME_MAX_LENGTH}
-            error={field.state.meta.isTouched ? field.state.meta.errors[0] : undefined}
-          />
-        )}
-      </form.Field>
+        <div className="flex flex-col gap-6">
+          <form.Field
+            name="name"
+            validators={{
+              onChange: ({ value }) => validateProductName(value),
+            }}
+          >
+            {(field) => (
+              <TextField
+                id="product-name"
+                label="Nome do produto"
+                value={field.state.value}
+                onChange={field.handleChange}
+                onBlur={field.handleBlur}
+                required
+                disabled={fieldsDisabled}
+                maxLength={PRODUCT_NAME_MAX_LENGTH}
+                error={field.state.meta.isTouched ? field.state.meta.errors[0] : undefined}
+              />
+            )}
+          </form.Field>
 
-      <form.Field
-        name="category_id"
-        validators={{
-          onChange: ({ value }) => validateProductCategory(value),
-        }}
-      >
-        {(field) => (
-          <SelectField
-            id="product-category"
-            label="Categoria"
-            value={field.state.value}
-            onChange={field.handleChange}
-            onBlur={field.handleBlur}
-            options={categoryOptions}
-            placeholder={
-              categoriesQuery.isLoading
-                ? 'Carregando categorias…'
-                : categoriesFailed
-                  ? 'Não foi possível carregar as categorias'
-                  : 'Selecione uma categoria'
-            }
-            required
-            disabled={fieldsDisabled || categoriesQuery.isLoading}
-            error={field.state.meta.isTouched ? field.state.meta.errors[0] : undefined}
-          />
-        )}
-      </form.Field>
+          <form.Field
+            name="category_id"
+            validators={{
+              onChange: ({ value }) => validateProductCategory(value),
+            }}
+          >
+            {(field) => (
+              <SelectField
+                id="product-category"
+                label="Categoria"
+                value={field.state.value}
+                onChange={field.handleChange}
+                onBlur={field.handleBlur}
+                options={categoryOptions}
+                placeholder={
+                  categoriesQuery.isLoading
+                    ? 'Carregando categorias…'
+                    : categoriesFailed
+                      ? 'Não foi possível carregar as categorias'
+                      : 'Selecione uma categoria'
+                }
+                required
+                disabled={fieldsDisabled || categoriesQuery.isLoading}
+                error={field.state.meta.isTouched ? field.state.meta.errors[0] : undefined}
+              />
+            )}
+          </form.Field>
 
-      <form.Field
-        name="price"
-        validators={{
-          onChange: ({ value }) => validateProductPrice(value),
-        }}
-      >
-        {(field) => (
-          <TextField
-            id="product-price"
-            label="Preço"
-            type="number"
-            step={0.01}
-            min={0}
-            value={field.state.value}
-            onChange={field.handleChange}
-            onBlur={field.handleBlur}
-            required
-            disabled={fieldsDisabled}
-            error={field.state.meta.isTouched ? field.state.meta.errors[0] : undefined}
-          />
-        )}
-      </form.Field>
+          <form.Field
+            name="price"
+            validators={{
+              onChange: ({ value }) => validateProductPrice(value),
+            }}
+          >
+            {(field) => (
+              <TextField
+                id="product-price"
+                label="Preço"
+                type="number"
+                step={0.01}
+                min={0}
+                value={field.state.value}
+                onChange={field.handleChange}
+                onBlur={field.handleBlur}
+                required
+                disabled={fieldsDisabled}
+                error={field.state.meta.isTouched ? field.state.meta.errors[0] : undefined}
+              />
+            )}
+          </form.Field>
 
-      <form.Field
-        name="original_price"
-        validators={{
-          onChange: ({ value, fieldApi }) =>
-            validateProductOriginalPrice(value, fieldApi.form.getFieldValue('price')),
-          onChangeListenTo: ['price'],
-        }}
-      >
-        {(field) => (
-          <TextField
-            id="product-original-price"
-            label="Preço original"
-            type="number"
-            step={0.01}
-            min={0}
-            value={field.state.value}
-            onChange={field.handleChange}
-            onBlur={field.handleBlur}
-            disabled={fieldsDisabled}
-            error={field.state.meta.isTouched ? field.state.meta.errors[0] : undefined}
-          />
-        )}
-      </form.Field>
+          <form.Field
+            name="original_price"
+            validators={{
+              onChange: ({ value, fieldApi }) =>
+                validateProductOriginalPrice(value, fieldApi.form.getFieldValue('price')),
+              onChangeListenTo: ['price'],
+            }}
+          >
+            {(field) => (
+              <TextField
+                id="product-original-price"
+                label="Preço original"
+                type="number"
+                step={0.01}
+                min={0}
+                value={field.state.value}
+                onChange={field.handleChange}
+                onBlur={field.handleBlur}
+                disabled={fieldsDisabled}
+                error={field.state.meta.isTouched ? field.state.meta.errors[0] : undefined}
+              />
+            )}
+          </form.Field>
 
-      <form.Field
-        name="badge_tone"
-        validators={{
-          onChange: ({ value, fieldApi }) =>
-            validateProductBadgeTone(value, fieldApi.form.getFieldValue('badge_label')),
-          onChangeListenTo: ['badge_label'],
-        }}
-      >
-        {(field) => (
-          <SelectField
-            id="product-badge-tone"
-            label="Estilo do selo"
-            value={field.state.value}
-            onChange={(value) => field.handleChange(toBadgeToneValue(value))}
-            onBlur={field.handleBlur}
-            options={BADGE_TONE_OPTIONS}
-            disabled={fieldsDisabled}
-            error={field.state.meta.isTouched ? field.state.meta.errors[0] : undefined}
-          />
-        )}
-      </form.Field>
+          <form.Field
+            name="badge_tone"
+            validators={{
+              onChange: ({ value, fieldApi }) =>
+                validateProductBadgeTone(value, fieldApi.form.getFieldValue('badge_label')),
+              onChangeListenTo: ['badge_label'],
+            }}
+          >
+            {(field) => (
+              <SelectField
+                id="product-badge-tone"
+                label="Estilo do selo"
+                value={field.state.value}
+                onChange={(value) => field.handleChange(toBadgeToneValue(value))}
+                onBlur={field.handleBlur}
+                options={BADGE_TONE_OPTIONS}
+                disabled={fieldsDisabled}
+                error={field.state.meta.isTouched ? field.state.meta.errors[0] : undefined}
+              />
+            )}
+          </form.Field>
 
-      <form.Field
-        name="badge_label"
-        validators={{
-          onChange: ({ value, fieldApi }) =>
-            validateProductBadgeLabel(value, fieldApi.form.getFieldValue('badge_tone')),
-          onChangeListenTo: ['badge_tone'],
-        }}
-      >
-        {(field) => (
-          <TextField
-            id="product-badge-label"
-            label="Texto do selo"
-            value={field.state.value}
-            onChange={field.handleChange}
-            onBlur={field.handleBlur}
-            disabled={fieldsDisabled}
-            error={field.state.meta.isTouched ? field.state.meta.errors[0] : undefined}
-          />
-        )}
-      </form.Field>
+          <form.Field
+            name="badge_label"
+            validators={{
+              onChange: ({ value, fieldApi }) =>
+                validateProductBadgeLabel(value, fieldApi.form.getFieldValue('badge_tone')),
+              onChangeListenTo: ['badge_tone'],
+            }}
+          >
+            {(field) => (
+              <TextField
+                id="product-badge-label"
+                label="Texto do selo"
+                value={field.state.value}
+                onChange={field.handleChange}
+                onBlur={field.handleBlur}
+                disabled={fieldsDisabled}
+                error={field.state.meta.isTouched ? field.state.meta.errors[0] : undefined}
+              />
+            )}
+          </form.Field>
 
-      <form.Field name="featured">
-        {(field) => (
-          <div className="flex flex-col gap-1">
-            <span className="block text-sm" style={{ color: 'var(--ink-700)' }}>
-              Produto em destaque
-            </span>
-            <ToggleSwitch
-              checked={field.state.value}
-              onChange={field.handleChange}
-              label="Produto em destaque"
-              hideLabel
-              disabled={fieldsDisabled}
-            />
-          </div>
-        )}
-      </form.Field>
+          <form.Field name="featured">
+            {(field) => (
+              <div className="flex flex-col gap-1">
+                <span className="block text-sm" style={{ color: 'var(--ink-700)' }}>
+                  Produto em destaque
+                </span>
+                <ToggleSwitch
+                  checked={field.state.value}
+                  onChange={field.handleChange}
+                  label="Produto em destaque"
+                  hideLabel
+                  disabled={fieldsDisabled}
+                />
+              </div>
+            )}
+          </form.Field>
 
-      <form.Field name="active">
-        {(field) => (
-          <div className="flex flex-col gap-1">
-            <span className="block text-sm" style={{ color: 'var(--ink-700)' }}>
-              Produto ativo
-              <span aria-hidden="true" style={{ color: 'var(--rose-400)' }}>
-                {' '}
-                *
-              </span>
-              <span className="sr-only"> (obrigatório)</span>
-            </span>
-            <ToggleSwitch
-              checked={field.state.value}
-              onChange={field.handleChange}
-              label="Produto ativo"
-              hideLabel
-              disabled={fieldsDisabled}
-            />
-          </div>
-        )}
-      </form.Field>
+          <form.Field name="active">
+            {(field) => (
+              <div className="flex flex-col gap-1">
+                <span className="block text-sm" style={{ color: 'var(--ink-700)' }}>
+                  Produto ativo
+                  <span aria-hidden="true" style={{ color: 'var(--rose-400)' }}>
+                    {' '}
+                    *
+                  </span>
+                  <span className="sr-only"> (obrigatório)</span>
+                </span>
+                <ToggleSwitch
+                  checked={field.state.value}
+                  onChange={field.handleChange}
+                  label="Produto ativo"
+                  hideLabel
+                  disabled={fieldsDisabled}
+                />
+              </div>
+            )}
+          </form.Field>
 
-      <form.Field
-        name="description"
-        validators={{
-          onChange: ({ value }) => validateProductDescription(value),
-        }}
-      >
-        {(field) => (
-          <TextareaField
-            id="product-description"
-            label="Descrição"
-            value={field.state.value}
-            onChange={field.handleChange}
-            onBlur={field.handleBlur}
-            disabled={fieldsDisabled}
-            maxLength={PRODUCT_DESCRIPTION_MAX_LENGTH}
-            rows={6}
-            error={field.state.meta.isTouched ? field.state.meta.errors[0] : undefined}
-          />
-        )}
-      </form.Field>
+          <form.Field
+            name="description"
+            validators={{
+              onChange: ({ value }) => validateProductDescription(value),
+            }}
+          >
+            {(field) => (
+              <TextareaField
+                id="product-description"
+                label="Descrição"
+                value={field.state.value}
+                onChange={field.handleChange}
+                onBlur={field.handleBlur}
+                disabled={fieldsDisabled}
+                maxLength={PRODUCT_DESCRIPTION_MAX_LENGTH}
+                rows={6}
+                error={field.state.meta.isTouched ? field.state.meta.errors[0] : undefined}
+              />
+            )}
+          </form.Field>
 
-      <form.Field name="coverImageFile">
-        {(field) => (
-          <CoverImageField
-            id="product-cover-image"
-            file={field.state.value}
-            existingUrl={initialValues.existingCoverImageUrl}
-            onChange={field.handleChange}
-            onBlur={field.handleBlur}
-            disabled={fieldsDisabled}
-          />
-        )}
-      </form.Field>
-
-      <form.Field name="galleryImageFiles">
-        {(newFilesField) => (
-          <form.Field name="existingGalleryImages">
-            {(existingImagesField) => (
-              <GalleryImageField
-                id="product-gallery-images"
-                newFiles={newFilesField.state.value}
-                existingImages={existingImagesField.state.value}
-                onNewFilesChange={newFilesField.handleChange}
-                onExistingImagesChange={existingImagesField.handleChange}
+          <form.Field name="coverImageFile">
+            {(field) => (
+              <CoverImageField
+                id="product-cover-image"
+                file={field.state.value}
+                existingUrl={initialValues.existingCoverImageUrl}
+                onChange={field.handleChange}
+                onBlur={field.handleBlur}
                 disabled={fieldsDisabled}
               />
             )}
           </form.Field>
-        )}
-      </form.Field>
 
-      <form.Subscribe
-        selector={(state) => ({
-          name: state.values.name,
-          categoryId: state.values.category_id,
-          price: state.values.price,
-          originalPrice: state.values.original_price,
-          badgeTone: state.values.badge_tone,
-          badgeLabel: state.values.badge_label,
-          coverImageFile: state.values.coverImageFile,
-        })}
-      >
-        {(preview) => (
-          <div className="max-w-xs">
-            <ProductFormPreview
-              name={preview.name}
-              categoryId={preview.categoryId}
-              categories={categories}
-              price={preview.price}
-              originalPrice={preview.originalPrice}
-              badgeTone={preview.badgeTone}
-              badgeLabel={preview.badgeLabel}
-              coverImageFile={preview.coverImageFile}
-              existingCoverImageUrl={initialValues.existingCoverImageUrl}
-            />
+          <form.Field name="galleryImageFiles">
+            {(newFilesField) => (
+              <form.Field name="existingGalleryImages">
+                {(existingImagesField) => (
+                  <GalleryImageField
+                    id="product-gallery-images"
+                    newFiles={newFilesField.state.value}
+                    existingImages={existingImagesField.state.value}
+                    onNewFilesChange={newFilesField.handleChange}
+                    onExistingImagesChange={existingImagesField.handleChange}
+                    disabled={fieldsDisabled}
+                  />
+                )}
+              </form.Field>
+            )}
+          </form.Field>
+
+          <div>
+            <button
+              type="submit"
+              disabled={fieldsDisabled || !form.state.canSubmit}
+              aria-busy={isBusy}
+              className="inline-flex w-full items-center justify-center gap-2 rounded-pill px-5 text-sm font-medium disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
+              style={{
+                height: 'var(--control-h-md)',
+                background: 'var(--gradient-gold)',
+                color: 'var(--text-on-gold)',
+                boxShadow: 'var(--shadow-gold)',
+                transition: 'opacity var(--dur-fast) var(--ease-out)',
+              }}
+            >
+              {isBusy && <Spinner className="h-4 w-4" />}
+              {submitLabel}
+            </button>
           </div>
-        )}
-      </form.Subscribe>
+        </div>
 
-      <div>
-        <button
-          type="submit"
-          disabled={fieldsDisabled || !form.state.canSubmit}
-          aria-busy={isBusy}
-          className="inline-flex w-full items-center justify-center gap-2 rounded-pill px-5 text-sm font-medium disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
-          style={{
-            height: 'var(--control-h-md)',
-            background: 'var(--gradient-gold)',
-            color: 'var(--text-on-gold)',
-            boxShadow: 'var(--shadow-gold)',
-            transition: 'opacity var(--dur-fast) var(--ease-out)',
-          }}
-        >
-          {isBusy && <Spinner className="h-4 w-4" />}
-          {submitLabel}
-        </button>
-      </div>
-    </form>
+        <div className="static flex flex-col gap-3 nav:sticky nav:top-6">
+          <span
+            className="text-2xs font-medium uppercase"
+            style={{
+              fontFamily: 'var(--font-sans)',
+              letterSpacing: 'var(--tracking-eyebrow)',
+              color: 'var(--text-gold)',
+            }}
+          >
+            Pré-visualização
+          </span>
+
+          <form.Subscribe
+            selector={(state) => ({
+              name: state.values.name,
+              categoryId: state.values.category_id,
+              price: state.values.price,
+              originalPrice: state.values.original_price,
+              badgeTone: state.values.badge_tone,
+              badgeLabel: state.values.badge_label,
+              coverImageFile: state.values.coverImageFile,
+            })}
+          >
+            {(preview) => (
+              <ProductFormPreview
+                name={preview.name}
+                categoryId={preview.categoryId}
+                categories={categories}
+                price={preview.price}
+                originalPrice={preview.originalPrice}
+                badgeTone={preview.badgeTone}
+                badgeLabel={preview.badgeLabel}
+                coverImageFile={preview.coverImageFile}
+                existingCoverImageUrl={initialValues.existingCoverImageUrl}
+              />
+            )}
+          </form.Subscribe>
+
+          <p className="text-xs" style={{ color: 'var(--ink-500)' }}>
+            É assim que o produto vai aparecer no catálogo, com os dados preenchidos ao lado.
+          </p>
+        </div>
+      </form>
+    </div>
   )
 }
