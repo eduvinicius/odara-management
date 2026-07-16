@@ -1,6 +1,6 @@
 import type { CSSProperties } from 'react'
 import { NavLink, useNavigate } from 'react-router-dom'
-import { LogOut } from 'lucide-react'
+import { LogOut, X } from 'lucide-react'
 import { signOut } from '../../../lib/auth'
 import { SIDEBAR_NAV_ITEMS } from './sidebar.data'
 import type { SidebarProps } from './sidebar.types'
@@ -19,19 +19,20 @@ function navLinkStyle({ isActive }: { isActive: boolean }): CSSProperties {
 }
 
 /**
- * Admin shell sidebar (Task 2: responsive container). Renders as a sticky,
- * in-flow, 248px rail at/above the `nav` breakpoint (Must 1) and as a
- * fixed, off-canvas panel below it (Must 2) — driven entirely by the
- * `isOpen` prop plus the `nav:`/base CSS breakpoint (Must 17), never a
- * viewport measurement. The open/close transition animates with this
- * codebase's `--dur-med`/`--ease-out` motion tokens (Must 3).
+ * Admin shell sidebar. Renders as a sticky, in-flow, 248px rail at/above
+ * the `nav` breakpoint (Must 1) and as a fixed, off-canvas panel below it
+ * (Must 2) — driven entirely by the `isOpen` prop plus the `nav:`/base CSS
+ * breakpoint (Must 17), never a viewport measurement. The open/close
+ * transition animates with this codebase's `--dur-med`/`--ease-out` motion
+ * tokens (Must 3).
  *
- * Mobile close affordances (scrim, own close button, nav-link auto-close)
- * are wired in Task 3 alongside the hamburger button that actually opens
- * this panel — `isOpen` here can only ever be the initial `false` until
- * then, satisfying "starts closed on mobile" (Must 18) in the meantime.
+ * Task 3 adds the mobile-only close button in this panel's own header
+ * (Must 10) and closes the panel whenever a nav link is clicked (Must 6) —
+ * both call `onClose`, owned by `AdminShell`. The scrim and the hamburger
+ * button that opens this panel live in `AdminShell`/`TopBar` instead, since
+ * they sit outside the sidebar's own DOM.
  */
-export function Sidebar({ isOpen }: SidebarProps) {
+export function Sidebar({ isOpen, onClose }: SidebarProps) {
   const navigate = useNavigate()
 
   async function handleSignOut() {
@@ -51,18 +52,30 @@ export function Sidebar({ isOpen }: SidebarProps) {
         transitionTimingFunction: 'var(--ease-out)',
       }}
     >
-      <div className="border-b p-6" style={{ borderColor: 'var(--border-soft)' }}>
+      <div
+        className="flex items-center justify-between gap-2 border-b p-6"
+        style={{ borderColor: 'var(--border-soft)' }}
+      >
         <span
           className="text-lg font-semibold"
           style={{ color: 'var(--ink-900)', fontFamily: 'var(--font-cormorant)' }}
         >
           Odara Management
         </span>
+        <button
+          type="button"
+          onClick={onClose}
+          aria-label="Fechar menu"
+          className="inline-flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-circle nav:hidden"
+          style={{ color: 'var(--ink-700)' }}
+        >
+          <X aria-hidden="true" className="h-5 w-5" />
+        </button>
       </div>
 
       <nav className="flex-1 space-y-1 px-4 py-4">
         {SIDEBAR_NAV_ITEMS.map((item) => (
-          <NavLink key={item.to} to={item.to} className={navLinkClassName} style={navLinkStyle}>
+          <NavLink key={item.to} to={item.to} onClick={onClose} className={navLinkClassName} style={navLinkStyle}>
             <item.icon aria-hidden="true" className="h-5 w-5 shrink-0" />
             {item.label}
           </NavLink>
