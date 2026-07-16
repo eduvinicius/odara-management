@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 import { Pencil, Trash2 } from 'lucide-react'
 import { ConfirmDialog } from '../../components/shared/ConfirmDialog'
 import { useToast } from '../../components/shared/Toast'
-import { useDeleteCategory } from '../../lib/mutations/categories'
+import { CategoryHasProductsError, useDeleteCategory } from '../../lib/mutations/categories'
 import type { CategoryWithProductCount } from '../../lib/queries/categories'
 
 /** Shown when a category delete fails, regardless of the underlying cause. */
@@ -66,9 +66,9 @@ export function CategoryRowActions({ category }: CategoryRowActionsProps) {
           setIsConfirmOpen(false)
           toast.success(`"${category.label}" foi excluída com sucesso.`)
         },
-        onError: () => {
+        onError: (error) => {
           setIsConfirmOpen(false)
-          toast.error(DELETE_ERROR_MESSAGE)
+          toast.error(error instanceof CategoryHasProductsError ? error.message : DELETE_ERROR_MESSAGE)
         },
       },
     )

@@ -16,6 +16,17 @@ const UNIQUE_VIOLATION_CODE = '23505'
 export class CategoryIdConflictError extends Error {}
 
 /**
+ * Thrown by `deleteCategory` when a fresh product-count check, performed
+ * immediately before the delete, finds one or more products still assigned
+ * to the category. The row-level disabled state (Task 9) already blocks this
+ * in the common case, but that count is a snapshot from whenever the list
+ * query last loaded — it can go stale if a product was (re)assigned to this
+ * category from another tab/session in the meantime. This re-check is the
+ * enforcement point for Must Not 32 that cannot go stale.
+ */
+export class CategoryHasProductsError extends Error {}
+
+/**
  * Input for `useCreateCategory`. `id` and `ord` are already computed by the
  * caller (see `lib/forms/categoryForm.ts`) — this mutation only persists
  * whatever it is given, it does not derive either value itself.
@@ -125,6 +136,22 @@ export type DeleteCategoryInput = {
 }
 
 async function deleteCategory(input: DeleteCategoryInput): Promise<void> {
+  const { count, error: countError } = await supabase
+    .from('Products')
+    .select('id', { count: 'exact', head: true })
+    .eq('category_id', input.id)
+
+  if (countError) {
+    throw new Error(countError.message)
+  }
+
+  if (count && count > 0) {
+    const productsClause = count === 1 ? '1 produto está associado' : `${count} produtos estão associados`
+    throw new CategoryHasProductsError(
+      `${productsClause} a esta categoria. Reatribua ou remova-os antes de excluir.`,
+    )
+  }
+
   const { error } = await supabase.from('Categories').delete().eq('id', input.id)
 
   if (error) {
@@ -136,7 +163,10 @@ async function deleteCategory(input: DeleteCategoryInput): Promise<void> {
  * Permanently removes a category row from the `Categories` table by `id`
  * (Must 19). Callers are responsible for confirming the deletion (Must
  * 17/18) and for checking product-assignment eligibility beforehand (Must
- * 14/15/32) — this mutation performs the delete unconditionally.
+ * 14/15/32) — but this mutation also re-checks the product count itself
+ * immediately before deleting, and throws `CategoryHasProductsError` if it is
+ * no longer zero, so a stale caller-side count can never let a delete through
+ * (Must Not 32).
  *
  * On success, invalidates the `['categories']` query cache so the category
  * list no longer shows the deleted row.
