@@ -366,7 +366,7 @@ export function ProductListPage() {
   const hasRows = !showLoadingState && !isError && data.length > 0
 
   return (
-    <div>
+    <div className="p-8">
       <div className="flex flex-wrap items-center justify-between gap-4">
         <h1
           style={{

@@ -10,7 +10,7 @@ import { useUpdateProduct } from '../../lib/mutations/products'
 import type { UpdateProductInput } from '../../lib/mutations/products'
 import { useProduct } from '../../lib/queries/products'
 import { resolveProductListReturnPath } from '../../router/productListReturnPath'
-import { ProductForm } from './ProductForm'
+import { PRODUCT_FORM_PAGE_PADDING_CLASS, ProductForm } from './ProductForm'
 
 /** Shown when updating a product fails, regardless of the underlying cause. */
 const UPDATE_ERROR_MESSAGE = 'Não foi possível salvar as alterações do produto. Tente novamente.'
@@ -78,6 +78,7 @@ function toUpdateProductInput(
 function PageHeading() {
   return (
     <h1
+      className="mb-6"
       style={{
         fontFamily: 'var(--font-cormorant)',
         color: 'var(--ink-900)',
@@ -98,7 +99,7 @@ type ProductLoadStatusProps = {
 function ProductLoadStatus({ message, children }: ProductLoadStatusProps) {
   return (
     <div
-      className="mt-6 flex flex-col items-center justify-center gap-3 rounded-md px-6 py-16 text-center"
+      className="flex flex-col items-center justify-center gap-3 rounded-md px-6 py-16 text-center"
       style={{ background: 'var(--surface-card)', boxShadow: 'var(--shadow-xs)' }}
     >
       {children}
@@ -170,7 +171,7 @@ export function ProductEditPage() {
 
   if (!id) {
     return (
-      <div>
+      <div className={PRODUCT_FORM_PAGE_PADDING_CLASS}>
         <PageHeading />
         <ProductLoadStatus message="Produto não encontrado.">
           <AlertTriangle aria-hidden="true" className="h-8 w-8" style={{ color: 'var(--rose-400)' }} />
@@ -181,7 +182,7 @@ export function ProductEditPage() {
 
   if (productQuery.isLoading) {
     return (
-      <div>
+      <div className={PRODUCT_FORM_PAGE_PADDING_CLASS}>
         <PageHeading />
         <ProductLoadStatus message="Carregando produto…">
           <Spinner className="h-6 w-6" />
@@ -192,7 +193,7 @@ export function ProductEditPage() {
 
   if (productQuery.isError || productQuery.data === null) {
     return (
-      <div>
+      <div className={PRODUCT_FORM_PAGE_PADDING_CLASS}>
         <PageHeading />
         <ProductLoadStatus
           message={
@@ -208,16 +209,12 @@ export function ProductEditPage() {
   }
 
   return (
-    <div>
-      <PageHeading />
-      <div className="mt-6">
-        <ProductForm
-          initialValues={toProductFormValues(productQuery.data)}
-          onSubmit={handleSubmit}
-          isSubmitting={updateMutation.isPending}
-          submitLabel="Salvar alterações"
-        />
-      </div>
-    </div>
+    <ProductForm
+      title="Editar Produto"
+      initialValues={toProductFormValues(productQuery.data)}
+      onSubmit={handleSubmit}
+      isSubmitting={updateMutation.isPending}
+      submitLabel="Salvar alterações"
+    />
   )
 }

@@ -62,24 +62,12 @@ export function ProductNewPage() {
   }
 
   return (
-    <div>
-      <h1
-        style={{
-          fontFamily: 'var(--font-cormorant)',
-          color: 'var(--ink-900)',
-          fontSize: '1.75rem',
-        }}
-      >
-        Novo Produto
-      </h1>
-      <div className="mt-6">
-        <ProductForm
-          initialValues={createEmptyProductFormValues()}
-          onSubmit={handleSubmit}
-          isSubmitting={createMutation.isPending}
-          submitLabel="Criar produto"
-        />
-      </div>
-    </div>
+    <ProductForm
+      title="Novo Produto"
+      initialValues={createEmptyProductFormValues()}
+      onSubmit={handleSubmit}
+      isSubmitting={createMutation.isPending}
+      submitLabel="Criar produto"
+    />
   )
 }

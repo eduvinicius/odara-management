@@ -1,6 +1,6 @@
 export function DashboardPage() {
   return (
-    <div>
+    <div className="p-8">
       <h1
         style={{
           fontFamily: 'var(--font-cormorant)',

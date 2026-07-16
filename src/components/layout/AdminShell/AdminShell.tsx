@@ -55,7 +55,7 @@ export function AdminShell() {
 
       <div className="flex flex-1 flex-col overflow-auto">
         <TopBar onOpenMenu={handleOpenMenu} />
-        <main className="flex-1 p-8">
+        <main className="flex-1">
           <Outlet />
         </main>
       </div>

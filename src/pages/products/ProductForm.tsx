@@ -50,7 +50,20 @@ function buildCategoryOptions(categories: Array<{ id: string; label: string }>):
   return categories.map((category) => ({ value: category.id, label: category.label }))
 }
 
+/**
+ * Page-level padding shared by every state of the product create/edit route
+ * (Task 6 spec values: 24px/20px/60px mobile, 44px/56px/80px desktop). Owned
+ * here — rather than by `AdminShell`'s `main` — so the page title and the
+ * form/preview grid below it always share one padded container instead of
+ * stacking two independent paddings. `ProductEditPage` reuses this constant
+ * for its loading/error/not-found states, which render before `ProductForm`
+ * ever mounts.
+ */
+export const PRODUCT_FORM_PAGE_PADDING_CLASS = 'flex flex-col pt-6 px-5 pb-15 nav:pt-11 nav:px-14 nav:pb-20'
+
 export type ProductFormProps = {
+  /** Page heading rendered above the form, inside the same padded container (e.g. "Novo Produto" or "Editar Produto"). */
+  title: string
   /**
    * Starting values for the form. Create mode passes
    * `createEmptyProductFormValues()`; edit mode passes
@@ -94,11 +107,15 @@ export type ProductFormProps = {
  * form fields on the left, a sticky live preview (Task 5) on the right —
  * collapsing to a single stacked column below it, with the preview under
  * the fields. The category-loading notices above stay full-width, outside
- * the grid, at every breakpoint (Should 39). Page padding is applied here
- * so both `ProductNewPage` and `ProductEditPage` inherit the entire layout
- * — grid, preview, and padding — without any page-specific code (Must 23).
+ * the grid, at every breakpoint (Should 39). The page's `<h1>` title and
+ * padding (`PRODUCT_FORM_PAGE_PADDING_CLASS`) are both applied here so both
+ * `ProductNewPage` and `ProductEditPage` inherit the entire layout — title,
+ * grid, preview, and padding, as one padded container with no stacking
+ * against `AdminShell`'s (unpadded) `main` — without any page-specific code
+ * (Must 23).
  */
 export function ProductForm({
+  title,
   initialValues,
   onSubmit,
   isSubmitting = false,
@@ -132,7 +149,18 @@ export function ProductForm({
   }
 
   return (
-    <div className="flex flex-col pt-6 px-5 pb-15 nav:pt-11 nav:px-14 nav:pb-20">
+    <div className={PRODUCT_FORM_PAGE_PADDING_CLASS}>
+      <h1
+        className="mb-6"
+        style={{
+          fontFamily: 'var(--font-cormorant)',
+          color: 'var(--ink-900)',
+          fontSize: '1.75rem',
+        }}
+      >
+        {title}
+      </h1>
+
       {categoriesFailed && (
         <div
           className="mb-6 flex flex-col items-start gap-3 rounded-md p-4 sm:flex-row sm:items-center"
