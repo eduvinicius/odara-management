@@ -1,5 +1,35 @@
-import { Outlet, Link, useNavigate } from 'react-router-dom'
+import type { CSSProperties } from 'react'
+import { Outlet, NavLink, useNavigate } from 'react-router-dom'
+import { LayoutDashboard, LogOut, MessageSquare, Package, Tags } from 'lucide-react'
+import type { LucideIcon } from 'lucide-react'
 import { signOut } from '../../lib/auth'
+
+type NavItem = {
+  label: string
+  to: string
+  icon: LucideIcon
+}
+
+/** Nav item copy, order, route, and icon (Must 12, Must 13). Order and copy match the pre-existing sidebar; only the icons and active-link behavior are new. */
+const NAV_ITEMS: NavItem[] = [
+  { label: 'Dashboard', to: '/dashboard', icon: LayoutDashboard },
+  { label: 'Produtos', to: '/products', icon: Package },
+  { label: 'Categorias', to: '/categories', icon: Tags },
+  { label: 'Feedbacks', to: '/feedbacks', icon: MessageSquare },
+]
+
+function navLinkClassName({ isActive }: { isActive: boolean }): string {
+  return `flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors ${
+    isActive ? 'font-bold' : 'font-normal'
+  }`
+}
+
+/** Cream-100 background + gold text for the active route's link (Must 15), determined by React Router's own active-match rather than a hardcoded value (Must 16). */
+function navLinkStyle({ isActive }: { isActive: boolean }): CSSProperties {
+  return isActive
+    ? { background: 'var(--cream-100)', color: 'var(--text-gold)' }
+    : { color: 'var(--ink-700)' }
+}
 
 export function AdminShell() {
   const navigate = useNavigate()
@@ -25,42 +55,21 @@ export function AdminShell() {
         </div>
 
         <nav className="flex-1 px-4 py-4 space-y-1">
-          <Link
-            to="/"
-            className="block px-3 py-2 rounded-md text-sm transition-colors"
-            style={{ color: 'var(--ink-700)' }}
-          >
-            Dashboard
-          </Link>
-          <Link
-            to="/products"
-            className="block px-3 py-2 rounded-md text-sm transition-colors"
-            style={{ color: 'var(--ink-700)' }}
-          >
-            Produtos
-          </Link>
-          <Link
-            to="/categories"
-            className="block px-3 py-2 rounded-md text-sm transition-colors"
-            style={{ color: 'var(--ink-700)' }}
-          >
-            Categorias
-          </Link>
-          <Link
-            to="/feedbacks"
-            className="block px-3 py-2 rounded-md text-sm transition-colors"
-            style={{ color: 'var(--ink-700)' }}
-          >
-            Feedbacks
-          </Link>
+          {NAV_ITEMS.map((item) => (
+            <NavLink key={item.to} to={item.to} className={navLinkClassName} style={navLinkStyle}>
+              <item.icon aria-hidden="true" className="h-5 w-5 shrink-0" />
+              {item.label}
+            </NavLink>
+          ))}
         </nav>
 
         <div className="p-4 border-t" style={{ borderColor: 'var(--border-soft)' }}>
           <button
             onClick={handleSignOut}
-            className="text-sm px-3 py-2 w-full text-left rounded-md transition-colors"
+            className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-left text-sm transition-colors"
             style={{ color: 'var(--ink-500)' }}
           >
+            <LogOut aria-hidden="true" className="h-5 w-5 shrink-0" />
             Sair
           </button>
         </div>
