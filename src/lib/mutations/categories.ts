@@ -108,3 +108,41 @@ export function useUpdateCategory(): UseMutationResult<Category, Error, UpdateCa
     },
   })
 }
+
+/** Input for `useDeleteCategory`. */
+export type DeleteCategoryInput = {
+  id: string
+}
+
+async function deleteCategory(input: DeleteCategoryInput): Promise<void> {
+  const { error } = await supabase.from('Categories').delete().eq('id', input.id)
+
+  if (error) {
+    throw new Error(error.message)
+  }
+}
+
+/**
+ * Permanently removes a category row from the `Categories` table by `id`
+ * (Must 19). Callers are responsible for confirming the deletion (Must
+ * 17/18) and for checking product-assignment eligibility beforehand (Must
+ * 14/15/32) — this mutation performs the delete unconditionally.
+ *
+ * On success, invalidates the `['categories']` query cache so the category
+ * list no longer shows the deleted row.
+ *
+ * Consumed by the category list's delete confirmation dialog (Task 10),
+ * which shows a `<ConfirmDialog>` before calling this mutation and a toast
+ * on success/error — this hook only exposes pending/error state, it does not
+ * notify the admin itself.
+ */
+export function useDeleteCategory(): UseMutationResult<void, Error, DeleteCategoryInput> {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: deleteCategory,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['categories'] })
+    },
+  })
+}
