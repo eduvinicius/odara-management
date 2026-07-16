@@ -64,3 +64,47 @@ export function useCreateCategory(): UseMutationResult<Category, Error, CreateCa
     },
   })
 }
+
+/** Input for `useUpdateCategory`. Only `label` is ever written; `id` and `ord` are immutable through this mutation (Must 12, Must 33). */
+export type UpdateCategoryInput = {
+  id: string
+  label: string
+}
+
+async function updateCategory(input: UpdateCategoryInput): Promise<Category> {
+  const { data, error } = await supabase
+    .from('Categories')
+    .update({ label: input.label })
+    .eq('id', input.id)
+    .select('id, label, ord')
+    .single()
+
+  if (error) {
+    throw new Error(error.message)
+  }
+
+  return data
+}
+
+/**
+ * Updates only a category's `label` by `id` (Must 11), leaving `id` and
+ * `ord` untouched (Must 12, Must 33).
+ *
+ * On success, invalidates the `['categories']` query cache so the category
+ * list and every other `['categories', ...]`-keyed query reflect the new
+ * label immediately.
+ *
+ * Consumed by the category edit page (Task 13), which is responsible for
+ * showing a toast on success/error — this hook only exposes pending/error
+ * state, it does not notify the admin itself.
+ */
+export function useUpdateCategory(): UseMutationResult<Category, Error, UpdateCategoryInput> {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: updateCategory,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['categories'] })
+    },
+  })
+}
