@@ -12,6 +12,7 @@ import { ToggleSwitch } from '../../components/shared/ToggleSwitch'
 import { Spinner } from '../../components/ui/Spinner'
 import { useCategories } from '../../lib/queries/categories'
 import type { BadgeTone } from '../../lib/queries/products'
+import { ProductFormPreview } from './ProductFormPreview'
 import {
   PRODUCT_DESCRIPTION_MAX_LENGTH,
   PRODUCT_NAME_MAX_LENGTH,
@@ -403,6 +404,34 @@ export function ProductForm({
           </form.Field>
         )}
       </form.Field>
+
+      <form.Subscribe
+        selector={(state) => ({
+          name: state.values.name,
+          categoryId: state.values.category_id,
+          price: state.values.price,
+          originalPrice: state.values.original_price,
+          badgeTone: state.values.badge_tone,
+          badgeLabel: state.values.badge_label,
+          coverImageFile: state.values.coverImageFile,
+        })}
+      >
+        {(preview) => (
+          <div className="max-w-xs">
+            <ProductFormPreview
+              name={preview.name}
+              categoryId={preview.categoryId}
+              categories={categories}
+              price={preview.price}
+              originalPrice={preview.originalPrice}
+              badgeTone={preview.badgeTone}
+              badgeLabel={preview.badgeLabel}
+              coverImageFile={preview.coverImageFile}
+              existingCoverImageUrl={initialValues.existingCoverImageUrl}
+            />
+          </div>
+        )}
+      </form.Subscribe>
 
       <div>
         <button
