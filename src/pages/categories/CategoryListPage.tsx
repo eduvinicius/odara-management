@@ -5,6 +5,7 @@ import type { DataTableColumn } from '../../components/shared/DataTable'
 import { Spinner } from '../../components/ui/Spinner'
 import { useCategoriesWithProductCounts } from '../../lib/queries/categories'
 import type { CategoryWithProductCount } from '../../lib/queries/categories'
+import { CategoryRowActions } from './CategoryRowActions'
 
 /**
  * Badge showing a category's assigned product count. Zero-product
@@ -49,6 +50,11 @@ function buildColumns(): Array<DataTableColumn<CategoryWithProductCount>> {
       header: 'Produtos',
       render: (category) => <ProductCountBadge productCount={category.productCount} />,
     },
+    {
+      key: 'actions',
+      header: 'Ações',
+      render: (category) => <CategoryRowActions category={category} />,
+    },
   ]
 }
 
@@ -83,8 +89,9 @@ function AddCategoryButton() {
  * All states, including the populated list, remain usable at 375px width
  * (Must 27) via `DataTable`'s stacked mobile layout.
  *
- * Row-level edit/delete actions and delete-eligibility gating are wired in
- * Task 9.
+ * Row-level edit/delete actions and delete-eligibility gating (Must 11, Must
+ * 13-16) are rendered per-row by `CategoryRowActions` (Task 9). Actually
+ * performing a delete and its success/error feedback are wired in Task 10.
  */
 export function CategoryListPage() {
   const { data, isLoading, isError, refetch } = useCategoriesWithProductCounts()
