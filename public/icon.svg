@@ -1,0 +1,117 @@
+<svg width="100%" viewBox="0 0 680 720" role="img" xmlns="http://www.w3.org/2000/svg">
+  <title>Ornate golden letter O from Odara</title>
+  <desc>A decorative calligraphic letter O in gold tones, inspired by the Odara brand logo, with elegant swirling flourishes and metallic gradient effect.</desc>
+
+  <defs>
+    <linearGradient id="goldMain" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#f5e0a0"/>
+      <stop offset="20%" style="stop-color:#c8902a"/>
+      <stop offset="45%" style="stop-color:#f0c96e"/>
+      <stop offset="65%" style="stop-color:#8b5e14"/>
+      <stop offset="80%" style="stop-color:#d4a030"/>
+      <stop offset="100%" style="stop-color:#a06820"/>
+    </linearGradient>
+    <linearGradient id="goldShine" x1="30%" y1="0%" x2="70%" y2="100%">
+      <stop offset="0%" style="stop-color:#fff4cc; stop-opacity:0.6"/>
+      <stop offset="40%" style="stop-color:#e8b84b; stop-opacity:0"/>
+      <stop offset="100%" style="stop-color:#6b4010; stop-opacity:0.4"/>
+    </linearGradient>
+    <linearGradient id="flourishGold" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#c8902a; stop-opacity:0"/>
+      <stop offset="50%" style="stop-color:#d4a030"/>
+      <stop offset="100%" style="stop-color:#c8902a; stop-opacity:0"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background warm blush -->
+  <rect width="680" height="720" fill="#f5ede4"/>
+
+  <!-- Main O calligraphic shape -->
+  <path d="
+    M 370 102
+    C 418 104, 480 140, 518 195
+    C 558 254, 572 320, 565 385
+    C 558 450, 534 512, 496 554
+    C 456 598, 402 624, 350 628
+    C 298 632, 242 614, 200 578
+    C 156 540, 126 484, 118 424
+    C 109 360, 122 290, 155 236
+    C 188 182, 240 146, 294 118
+    C 314 108, 340 102, 370 102
+    Z
+
+    M 330 152
+    C 292 158, 254 178, 226 212
+    C 196 248, 178 296, 175 348
+    C 172 402, 186 458, 216 498
+    C 246 538, 290 562, 336 566
+    C 382 570, 428 552, 460 518
+    C 492 484, 510 436, 512 384
+    C 514 330, 499 274, 470 234
+    C 440 192, 396 158, 350 152
+    C 344 151, 337 151, 330 152
+    Z
+  " fill="url(#goldMain)" fill-rule="evenodd"/>
+
+  <!-- Shine overlay -->
+  <path d="
+    M 370 102
+    C 418 104, 480 140, 518 195
+    C 558 254, 572 320, 565 385
+    C 558 450, 534 512, 496 554
+    C 456 598, 402 624, 350 628
+    C 298 632, 242 614, 200 578
+    C 156 540, 126 484, 118 424
+    C 109 360, 122 290, 155 236
+    C 188 182, 240 146, 294 118
+    C 314 108, 340 102, 370 102
+    Z
+
+    M 330 152
+    C 292 158, 254 178, 226 212
+    C 196 248, 178 296, 175 348
+    C 172 402, 186 458, 216 498
+    C 246 538, 290 562, 336 566
+    C 382 570, 428 552, 460 518
+    C 492 484, 510 436, 512 384
+    C 514 330, 499 274, 470 234
+    C 440 192, 396 158, 350 152
+    C 344 151, 337 151, 330 152
+    Z
+  " fill="url(#goldShine)" fill-rule="evenodd"/>
+
+  <!-- Highlight line upper-right -->
+  <path d="M 530 280 C 548 320, 550 360, 540 400" fill="none" stroke="#fff4cc" stroke-width="4" stroke-linecap="round" opacity="0.6"/>
+
+  <!-- Calligraphic thick accent lower-left -->
+  <path d="M 145 340 C 125 390, 125 440, 145 490 C 148 498, 155 510, 160 520" fill="none" stroke="#f0c96e" stroke-width="8" stroke-linecap="round" opacity="0.5"/>
+
+  <!-- Top serif flourish -->
+  <path d="M 368 105 C 380 85, 420 60, 460 48 C 500 36, 530 42, 545 55 C 555 64, 550 78, 538 82 C 525 87, 508 78, 498 68" fill="none" stroke="url(#goldMain)" stroke-width="4.5" stroke-linecap="round"/>
+  <path d="M 368 105 C 380 85, 420 60, 460 48 C 500 36, 530 42, 545 55 C 555 64, 550 78, 538 82 C 525 87, 508 78, 498 68" fill="none" stroke="#f5e0a0" stroke-width="1.5" stroke-linecap="round" opacity="0.5"/>
+  <circle cx="497" cy="67" r="5" fill="url(#goldMain)"/>
+
+  <!-- Bottom-left tail swash -->
+  <path d="M 200 578 C 175 598, 145 618, 115 632 C 85 646, 58 650, 44 640 C 32 630, 38 615, 55 608 C 72 600, 96 604, 110 616" fill="none" stroke="url(#goldMain)" stroke-width="4.5" stroke-linecap="round"/>
+  <path d="M 200 578 C 175 598, 145 618, 115 632 C 85 646, 58 650, 44 640 C 32 630, 38 615, 55 608 C 72 600, 96 604, 110 616" fill="none" stroke="#f5e0a0" stroke-width="1.5" stroke-linecap="round" opacity="0.5"/>
+  <circle cx="111" cy="617" r="5" fill="url(#goldMain)"/>
+
+  <!-- Leaf sprig left side -->
+  <g opacity="0.88">
+    <path d="M 65 400 C 50 370, 38 340, 42 310" fill="none" stroke="#c8902a" stroke-width="2" stroke-linecap="round"/>
+    <ellipse cx="48" cy="375" rx="12" ry="6" fill="url(#goldMain)" transform="rotate(-30, 48, 375)"/>
+    <ellipse cx="44" cy="345" rx="11" ry="5.5" fill="url(#goldMain)" transform="rotate(-45, 44, 345)"/>
+    <ellipse cx="43" cy="318" rx="9" ry="4.5" fill="url(#goldMain)" transform="rotate(-55, 43, 318)"/>
+    <ellipse cx="68" cy="372" rx="12" ry="6" fill="url(#goldMain)" transform="rotate(20, 68, 372)"/>
+    <ellipse cx="64" cy="345" rx="11" ry="5" fill="url(#goldMain)" transform="rotate(10, 64, 345)"/>
+  </g>
+
+  <!-- Decorative horizontal divider -->
+  <line x1="200" y1="668" x2="480" y2="668" stroke="url(#flourishGold)" stroke-width="1.5"/>
+
+  <!-- Heart ornament -->
+  <path d="M 340 660 C 340 656, 334 651, 329 655 C 324 659, 324 666, 340 674 C 356 666, 356 659, 351 655 C 346 651, 340 656, 340 660 Z" fill="url(#goldMain)" transform="scale(0.8) translate(85, 83)"/>
+
+  <!-- Subtle inner glow ring -->
+  <ellipse cx="340" cy="368" rx="155" ry="192" fill="none" stroke="#f5e0a0" stroke-width="2" opacity="0.3"/>
+</svg>

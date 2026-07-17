@@ -1,0 +1,515 @@
+import type { FormEvent } from 'react'
+import { Link } from 'react-router-dom'
+import { useForm } from '@tanstack/react-form'
+import { AlertTriangle, FolderPlus, RefreshCw } from 'lucide-react'
+import { CoverImageField } from '../../components/shared/CoverImageField'
+import { GalleryImageField } from '../../components/shared/GalleryImageField'
+import { SelectField } from '../../components/shared/SelectField'
+import type { SelectFieldOption } from '../../components/shared/SelectField'
+import { TextField } from '../../components/shared/TextField'
+import { TextareaField } from '../../components/shared/TextareaField'
+import { ToggleSwitch } from '../../components/shared/ToggleSwitch'
+import { Spinner } from '../../components/ui/Spinner'
+import { useCategories } from '../../lib/queries/categories'
+import type { BadgeTone } from '../../lib/queries/products'
+import { ProductFormPreview } from './ProductFormPreview'
+import {
+  PRODUCT_DESCRIPTION_MAX_LENGTH,
+  PRODUCT_NAME_MAX_LENGTH,
+  validateProductBadgeLabel,
+  validateProductBadgeTone,
+  validateProductCategory,
+  validateProductDescription,
+  validateProductName,
+  validateProductOriginalPrice,
+  validateProductPrice,
+} from '../../lib/forms/productForm'
+import type { ProductFormValues } from '../../lib/forms/productForm'
+
+/** Options for the badge tone selector. Includes a selectable "no badge" entry so a chosen tone can be cleared back to empty. */
+const BADGE_TONE_OPTIONS: SelectFieldOption[] = [
+  { value: '', label: 'Sem selo' },
+  { value: 'sale', label: 'Promoção (rosa)' },
+  { value: 'new', label: 'Novidade (esmeralda)' },
+  { value: 'gold', label: 'Dourado' },
+  { value: 'neutral', label: 'Neutro' },
+]
+
+const BADGE_TONE_VALUES: readonly BadgeTone[] = ['sale', 'new', 'gold', 'neutral']
+
+function isBadgeTone(value: string): value is BadgeTone {
+  return (BADGE_TONE_VALUES as readonly string[]).includes(value)
+}
+
+/** Narrows a raw select value to `BadgeTone | ''`, the type `ProductFormValues.badge_tone` expects. */
+function toBadgeToneValue(value: string): BadgeTone | '' {
+  return isBadgeTone(value) ? value : ''
+}
+
+function buildCategoryOptions(categories: Array<{ id: string; label: string }>): SelectFieldOption[] {
+  return categories.map((category) => ({ value: category.id, label: category.label }))
+}
+
+/**
+ * Page-level padding shared by every state of the product create/edit route
+ * (Task 6 spec values: 24px/20px/60px mobile, 44px/56px/80px desktop). Owned
+ * here — rather than by `AdminShell`'s `main` — so the page title and the
+ * form/preview grid below it always share one padded container instead of
+ * stacking two independent paddings. `ProductEditPage` reuses this constant
+ * for its loading/error/not-found states, which render before `ProductForm`
+ * ever mounts.
+ */
+export const PRODUCT_FORM_PAGE_PADDING_CLASS = 'flex flex-col pt-6 px-5 pb-15 nav:pt-11 nav:px-14 nav:pb-20'
+
+export type ProductFormProps = {
+  /** Page heading rendered above the form, inside the same padded container (e.g. "Novo Produto" or "Editar Produto"). */
+  title: string
+  /**
+   * Starting values for the form. Create mode passes
+   * `createEmptyProductFormValues()`; edit mode passes
+   * `toProductFormValues(product)` once the product query has resolved.
+   *
+   * `useForm`'s `defaultValues` are only read on mount, so the parent must
+   * not render `ProductForm` until `initialValues` reflects real data (edit
+   * mode: wait for `useProduct` to finish loading; render a skeleton until
+   * then, per the edit form rule).
+   */
+  initialValues: ProductFormValues
+  /** Called with the current form values once the form passes validation and the admin submits. May be async — the submit button stays disabled until it resolves. */
+  onSubmit: (values: ProductFormValues) => void | Promise<void>
+  /** External pending state (e.g. the create/update mutation), combined with the form's own `isSubmitting` to disable the form while a save is in flight. @default false */
+  isSubmitting?: boolean
+  /** Label for the submit button. @default 'Salvar produto' */
+  submitLabel?: string
+}
+
+/**
+ * Shared create/edit layout for the product form (Task 21). Owns its own
+ * TanStack Form instance (`useForm`) seeded from `initialValues` and reports
+ * validated values upward via `onSubmit` — it never calls a Supabase
+ * mutation directly; that is the responsibility of `ProductNewPage` (Task 22)
+ * and `ProductEditPage` (Task 23).
+ *
+ * Gates the entire form (Must 38) once `useCategories()` finishes loading
+ * and returns zero categories: every field and the submit button become
+ * non-interactive, and a message directs the admin to `/categories` to
+ * create one first (note: that route does not exist in this app yet — see
+ * this task's report).
+ *
+ * Also gates the form when the categories fetch itself fails
+ * (`categoriesQuery.isError`): this is a distinct situation from "no
+ * categories exist" — there is no way to validly assign a category if the
+ * list failed to load, so the form is disabled and a retry action
+ * (`categoriesQuery.refetch()`) is offered instead of the "create a
+ * category" call-to-action.
+ *
+ * Page layout (Task 6): a two-column grid at/above the `nav` breakpoint —
+ * form fields on the left, a sticky live preview (Task 5) on the right —
+ * collapsing to a single stacked column below it, with the preview under
+ * the fields. The category-loading notices above stay full-width, outside
+ * the grid, at every breakpoint (Should 39). The page's `<h1>` title and
+ * padding (`PRODUCT_FORM_PAGE_PADDING_CLASS`) are both applied here so both
+ * `ProductNewPage` and `ProductEditPage` inherit the entire layout — title,
+ * grid, preview, and padding, as one padded container with no stacking
+ * against `AdminShell`'s (unpadded) `main` — without any page-specific code
+ * (Must 23).
+ */
+export function ProductForm({
+  title,
+  initialValues,
+  onSubmit,
+  isSubmitting = false,
+  submitLabel = 'Salvar produto',
+}: ProductFormProps) {
+  const categoriesQuery = useCategories()
+
+  const categories = categoriesQuery.data ?? []
+  const categoriesFailed = categoriesQuery.isError
+  const hasNoCategories = !categoriesQuery.isLoading && !categoriesFailed && categories.length === 0
+  const categoryOptions = buildCategoryOptions(categories)
+
+  function handleCategoriesRetry() {
+    categoriesQuery.refetch()
+  }
+
+  const form = useForm({
+    defaultValues: initialValues,
+    onSubmit: async ({ value }) => {
+      await onSubmit(value)
+    },
+  })
+
+  const isBusy = form.state.isSubmitting || isSubmitting
+  const fieldsDisabled = hasNoCategories || categoriesFailed || isBusy
+
+  function handleFormSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    event.stopPropagation()
+    form.handleSubmit()
+  }
+
+  return (
+    <div className={PRODUCT_FORM_PAGE_PADDING_CLASS}>
+      <h1
+        className="mb-6"
+        style={{
+          fontFamily: 'var(--font-cormorant)',
+          color: 'var(--ink-900)',
+          fontSize: '1.75rem',
+        }}
+      >
+        {title}
+      </h1>
+
+      {categoriesFailed && (
+        <div
+          className="mb-6 flex flex-col items-start gap-3 rounded-md p-4 sm:flex-row sm:items-center"
+          style={{ background: 'var(--surface-card)', boxShadow: 'var(--shadow-xs)' }}
+        >
+          <AlertTriangle aria-hidden="true" className="h-6 w-6 shrink-0" style={{ color: 'var(--rose-400)' }} />
+          <p className="flex-1 text-sm" style={{ color: 'var(--ink-700)' }}>
+            Não foi possível carregar as categorias. Tente novamente.
+          </p>
+          <button
+            type="button"
+            onClick={handleCategoriesRetry}
+            className="inline-flex shrink-0 cursor-pointer items-center gap-2 rounded-pill px-5 text-sm font-medium"
+            style={{
+              height: 'var(--control-h-sm)',
+              border: '1px solid var(--border-soft)',
+              color: 'var(--ink-700)',
+              background: 'var(--surface-raised)',
+              transition: 'opacity var(--dur-fast) var(--ease-out)',
+            }}
+          >
+            <RefreshCw aria-hidden="true" className="h-4 w-4" />
+            Tentar novamente
+          </button>
+        </div>
+      )}
+
+      {hasNoCategories && (
+        <div
+          className="mb-6 flex flex-col items-start gap-3 rounded-md p-4 sm:flex-row sm:items-center"
+          style={{ background: 'var(--surface-card)', boxShadow: 'var(--shadow-xs)' }}
+        >
+          <FolderPlus aria-hidden="true" className="h-6 w-6 shrink-0" style={{ color: 'var(--gold-400)' }} />
+          <p className="flex-1 text-sm" style={{ color: 'var(--ink-700)' }}>
+            Nenhuma categoria cadastrada ainda. Cadastre uma categoria antes de criar produtos.
+          </p>
+          <Link
+            to="/categories"
+            className="inline-flex shrink-0 items-center justify-center rounded-pill px-5 text-sm font-medium"
+            style={{
+              height: 'var(--control-h-sm)',
+              background: 'var(--gradient-gold)',
+              color: 'var(--text-on-gold)',
+              boxShadow: 'var(--shadow-gold)',
+            }}
+          >
+            Ir para categorias
+          </Link>
+        </div>
+      )}
+
+      <form
+        onSubmit={handleFormSubmit}
+        className="grid grid-cols-1 gap-8 nav:grid-cols-[minmax(0,1.6fr)_minmax(280px,1fr)] nav:items-start nav:gap-10"
+        noValidate
+      >
+        <div className="flex flex-col gap-6">
+          <form.Field
+            name="name"
+            validators={{
+              onChange: ({ value }) => validateProductName(value),
+            }}
+          >
+            {(field) => (
+              <TextField
+                id="product-name"
+                label="Nome do produto"
+                value={field.state.value}
+                onChange={field.handleChange}
+                onBlur={field.handleBlur}
+                required
+                disabled={fieldsDisabled}
+                maxLength={PRODUCT_NAME_MAX_LENGTH}
+                error={field.state.meta.isTouched ? field.state.meta.errors[0] : undefined}
+              />
+            )}
+          </form.Field>
+
+          <form.Field
+            name="category_id"
+            validators={{
+              onChange: ({ value }) => validateProductCategory(value),
+            }}
+          >
+            {(field) => (
+              <SelectField
+                id="product-category"
+                label="Categoria"
+                value={field.state.value}
+                onChange={field.handleChange}
+                onBlur={field.handleBlur}
+                options={categoryOptions}
+                placeholder={
+                  categoriesQuery.isLoading
+                    ? 'Carregando categorias…'
+                    : categoriesFailed
+                      ? 'Não foi possível carregar as categorias'
+                      : 'Selecione uma categoria'
+                }
+                required
+                disabled={fieldsDisabled || categoriesQuery.isLoading}
+                error={field.state.meta.isTouched ? field.state.meta.errors[0] : undefined}
+              />
+            )}
+          </form.Field>
+
+          <form.Field
+            name="price"
+            validators={{
+              onChange: ({ value }) => validateProductPrice(value),
+            }}
+          >
+            {(field) => (
+              <TextField
+                id="product-price"
+                label="Preço"
+                type="number"
+                step={0.01}
+                min={0}
+                value={field.state.value}
+                onChange={field.handleChange}
+                onBlur={field.handleBlur}
+                required
+                disabled={fieldsDisabled}
+                error={field.state.meta.isTouched ? field.state.meta.errors[0] : undefined}
+              />
+            )}
+          </form.Field>
+
+          <form.Field
+            name="original_price"
+            validators={{
+              onChange: ({ value, fieldApi }) =>
+                validateProductOriginalPrice(value, fieldApi.form.getFieldValue('price')),
+              onChangeListenTo: ['price'],
+            }}
+          >
+            {(field) => (
+              <TextField
+                id="product-original-price"
+                label="Preço original"
+                type="number"
+                step={0.01}
+                min={0}
+                value={field.state.value}
+                onChange={field.handleChange}
+                onBlur={field.handleBlur}
+                disabled={fieldsDisabled}
+                error={field.state.meta.isTouched ? field.state.meta.errors[0] : undefined}
+              />
+            )}
+          </form.Field>
+
+          <form.Field
+            name="badge_tone"
+            validators={{
+              onChange: ({ value, fieldApi }) =>
+                validateProductBadgeTone(value, fieldApi.form.getFieldValue('badge_label')),
+              onChangeListenTo: ['badge_label'],
+            }}
+          >
+            {(field) => (
+              <SelectField
+                id="product-badge-tone"
+                label="Estilo do selo"
+                value={field.state.value}
+                onChange={(value) => field.handleChange(toBadgeToneValue(value))}
+                onBlur={field.handleBlur}
+                options={BADGE_TONE_OPTIONS}
+                disabled={fieldsDisabled}
+                error={field.state.meta.isTouched ? field.state.meta.errors[0] : undefined}
+              />
+            )}
+          </form.Field>
+
+          <form.Field
+            name="badge_label"
+            validators={{
+              onChange: ({ value, fieldApi }) =>
+                validateProductBadgeLabel(value, fieldApi.form.getFieldValue('badge_tone')),
+              onChangeListenTo: ['badge_tone'],
+            }}
+          >
+            {(field) => (
+              <TextField
+                id="product-badge-label"
+                label="Texto do selo"
+                value={field.state.value}
+                onChange={field.handleChange}
+                onBlur={field.handleBlur}
+                disabled={fieldsDisabled}
+                error={field.state.meta.isTouched ? field.state.meta.errors[0] : undefined}
+              />
+            )}
+          </form.Field>
+
+          <form.Field name="featured">
+            {(field) => (
+              <div className="flex flex-col gap-1">
+                <span className="block text-sm" style={{ color: 'var(--ink-700)' }}>
+                  Produto em destaque
+                </span>
+                <ToggleSwitch
+                  checked={field.state.value}
+                  onChange={field.handleChange}
+                  label="Produto em destaque"
+                  hideLabel
+                  disabled={fieldsDisabled}
+                />
+              </div>
+            )}
+          </form.Field>
+
+          <form.Field name="active">
+            {(field) => (
+              <div className="flex flex-col gap-1">
+                <span className="block text-sm" style={{ color: 'var(--ink-700)' }}>
+                  Produto ativo
+                  <span aria-hidden="true" style={{ color: 'var(--rose-400)' }}>
+                    {' '}
+                    *
+                  </span>
+                  <span className="sr-only"> (obrigatório)</span>
+                </span>
+                <ToggleSwitch
+                  checked={field.state.value}
+                  onChange={field.handleChange}
+                  label="Produto ativo"
+                  hideLabel
+                  disabled={fieldsDisabled}
+                />
+              </div>
+            )}
+          </form.Field>
+
+          <form.Field
+            name="description"
+            validators={{
+              onChange: ({ value }) => validateProductDescription(value),
+            }}
+          >
+            {(field) => (
+              <TextareaField
+                id="product-description"
+                label="Descrição"
+                value={field.state.value}
+                onChange={field.handleChange}
+                onBlur={field.handleBlur}
+                disabled={fieldsDisabled}
+                maxLength={PRODUCT_DESCRIPTION_MAX_LENGTH}
+                rows={6}
+                error={field.state.meta.isTouched ? field.state.meta.errors[0] : undefined}
+              />
+            )}
+          </form.Field>
+
+          <form.Field name="coverImageFile">
+            {(field) => (
+              <CoverImageField
+                id="product-cover-image"
+                file={field.state.value}
+                existingUrl={initialValues.existingCoverImageUrl}
+                onChange={field.handleChange}
+                onBlur={field.handleBlur}
+                disabled={fieldsDisabled}
+              />
+            )}
+          </form.Field>
+
+          <form.Field name="galleryImageFiles">
+            {(newFilesField) => (
+              <form.Field name="existingGalleryImages">
+                {(existingImagesField) => (
+                  <GalleryImageField
+                    id="product-gallery-images"
+                    newFiles={newFilesField.state.value}
+                    existingImages={existingImagesField.state.value}
+                    onNewFilesChange={newFilesField.handleChange}
+                    onExistingImagesChange={existingImagesField.handleChange}
+                    disabled={fieldsDisabled}
+                  />
+                )}
+              </form.Field>
+            )}
+          </form.Field>
+
+          <div>
+            <button
+              type="submit"
+              disabled={fieldsDisabled || !form.state.canSubmit}
+              aria-busy={isBusy}
+              className="inline-flex w-full items-center justify-center gap-2 rounded-pill px-5 text-sm font-medium disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
+              style={{
+                height: 'var(--control-h-md)',
+                background: 'var(--gradient-gold)',
+                color: 'var(--text-on-gold)',
+                boxShadow: 'var(--shadow-gold)',
+                transition: 'opacity var(--dur-fast) var(--ease-out)',
+              }}
+            >
+              {isBusy && <Spinner className="h-4 w-4" />}
+              {submitLabel}
+            </button>
+          </div>
+        </div>
+
+        <div className="static flex flex-col gap-3 nav:sticky nav:top-6">
+          <span
+            className="text-2xs font-medium uppercase"
+            style={{
+              fontFamily: 'var(--font-sans)',
+              letterSpacing: 'var(--tracking-eyebrow)',
+              color: 'var(--text-gold)',
+            }}
+          >
+            Pré-visualização
+          </span>
+
+          <form.Subscribe
+            selector={(state) => ({
+              name: state.values.name,
+              categoryId: state.values.category_id,
+              price: state.values.price,
+              originalPrice: state.values.original_price,
+              badgeTone: state.values.badge_tone,
+              badgeLabel: state.values.badge_label,
+              coverImageFile: state.values.coverImageFile,
+            })}
+          >
+            {(preview) => (
+              <ProductFormPreview
+                name={preview.name}
+                categoryId={preview.categoryId}
+                categories={categories}
+                price={preview.price}
+                originalPrice={preview.originalPrice}
+                badgeTone={preview.badgeTone}
+                badgeLabel={preview.badgeLabel}
+                coverImageFile={preview.coverImageFile}
+                existingCoverImageUrl={initialValues.existingCoverImageUrl}
+              />
+            )}
+          </form.Subscribe>
+
+          <p className="text-xs" style={{ color: 'var(--ink-500)' }}>
+            É assim que o produto vai aparecer no catálogo, com os dados preenchidos ao lado.
+          </p>
+        </div>
+      </form>
+    </div>
+  )
+}

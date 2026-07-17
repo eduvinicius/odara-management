@@ -169,6 +169,12 @@
    ────────────────────────────────────────────────────────────── */
 
 @theme inline {
+  /* Breakpoints — `nav` gates the admin shell's sidebar/topbar layout switch
+     (Must 17: a pure CSS breakpoint, never a `window.innerWidth` listener).
+     Tailwind v4 auto-generates both `nav:` (min-width) and `max-nav:`
+     (max-width, one pixel below) variants from this token. */
+  --breakpoint-nav: 960px;
+
   /* Fonts */
   --font-sans:   var(--font-sans);
   --font-serif:  var(--font-serif);
@@ -283,4 +289,46 @@ a { color: var(--text-gold); text-decoration: none; }
 :focus-visible {
   outline: var(--focus-width) solid var(--focus-ring);
   outline-offset: 2px;
+}
+
+/* Toast notification entrance */
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Confirm dialog entrance + backdrop */
+@keyframes dialog-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes dialog-backdrop-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+dialog.confirm-dialog {
+  animation: dialog-in var(--dur-med) var(--ease-out);
+}
+
+dialog.confirm-dialog::backdrop {
+  background: rgba(56, 41, 27, 0.45);
+  animation: dialog-backdrop-in var(--dur-med) var(--ease-out);
 }
