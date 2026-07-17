@@ -11,7 +11,7 @@ export function DashboardPage() {
         Dashboard
       </h1>
       <p className="mt-2 text-sm" style={{ color: 'var(--ink-700)' }}>
-        Bem-vindo ao Odara Management.
+        Bem-vindo ao Odara Gerenciamento.
       </p>
     </div>
   )

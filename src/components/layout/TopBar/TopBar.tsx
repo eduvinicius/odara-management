@@ -31,7 +31,7 @@ export function TopBar({ onOpenMenu }: TopBarProps) {
         className="text-base font-semibold"
         style={{ color: 'var(--ink-900)', fontFamily: 'var(--font-cormorant)' }}
       >
-        Odara Management
+        Odara Gerenciamento
       </span>
     </header>
   )

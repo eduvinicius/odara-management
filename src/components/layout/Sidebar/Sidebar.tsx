@@ -60,7 +60,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
           className="text-lg font-semibold"
           style={{ color: 'var(--ink-900)', fontFamily: 'var(--font-cormorant)' }}
         >
-          Odara Management
+          Odara Gerenciamento
         </span>
         <button
           type="button"
